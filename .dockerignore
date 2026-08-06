@@ -1,0 +1,8 @@
+data/
+.env
+.git/
+.agents/
+.claude/
+node_modules/
+*.log
+.DS_Store

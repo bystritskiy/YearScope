@@ -1,0 +1,20 @@
+services:
+  yearscope:
+    build: .
+    container_name: yearscope
+    restart: unless-stopped
+    ports:
+      - "3010:3010"
+    environment:
+      # Часовой пояс должен совпадать с KoShelf, иначе чтение будет
+      # раскладываться по соседним дням и месячные суммы разъедутся.
+      TZ: Europe/Warsaw
+      KOSHELF_BASE_URL: http://NAS_HOST:3003
+      GOWITHME_PLAYER: your-nick
+      LETTERBOXD_USER: your-nick
+      SYNC_INTERVAL_MINUTES: "60"
+    env_file:
+      - .env
+    volumes:
+      # База и импорты переживают пересоздание контейнера.
+      - ./data:/app/data

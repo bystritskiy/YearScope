@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0b0e14" />
+    <title>YearScope</title>
+    <link rel="stylesheet" href="/style.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>📊</text></svg>"
+    />
+  </head>
+  <body>
+    <main class="shell">
+      <header class="top">
+        <div class="top__title">
+          <h1>YearScope</h1>
+          <p class="top__sub" id="subtitle">загружаю…</p>
+        </div>
+        <div class="top__actions">
+          <span class="stamp" id="stamp"></span>
+          <button type="button" id="sync" class="btn">Обновить</button>
+        </div>
+      </header>
+
+      <section class="total" id="total" hidden>
+        <div class="total__value">
+          <span class="total__hours" id="total-hours">—</span>
+          <span class="total__unit">часов за год</span>
+        </div>
+        <div class="total__meta" id="total-meta"></div>
+        <div class="bar" id="total-bar"></div>
+      </section>
+
+      <section class="cards" id="cards"></section>
+
+      <section class="panel" id="chart-panel" hidden>
+        <h2 class="panel__title">По месяцам</h2>
+        <div class="chart" id="chart"></div>
+      </section>
+
+      <section class="panel" id="gaps-panel" hidden>
+        <h2 class="panel__title">Что стоит знать о данных</h2>
+        <ul class="gaps" id="gaps"></ul>
+      </section>
+    </main>
+
+    <script src="/app.js" type="module"></script>
+  </body>
+</html>
