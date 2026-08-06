@@ -1,5 +1,12 @@
 import { SOURCE_META, SOURCE_ORDER, config, type SourceId } from './config.ts';
-import { getHighlights, getMonthlyBreakdown, getSourceTotals, getSyncState } from './db.ts';
+import {
+  getHighlights,
+  getJournal,
+  getMonthlyBreakdown,
+  getSourceTotals,
+  getSyncState,
+  type JournalDay,
+} from './db.ts';
 import { sourceById } from './sources/index.ts';
 
 export type SourceSummary = {
@@ -84,5 +91,29 @@ export function buildSummary(year = config.year): Summary {
     totalSeconds,
     sources,
     months,
+  };
+}
+
+export type SourceDetail = {
+  source: SourceSummary;
+  /** Полный рейтинг, а не только то, что помещается на карточку. */
+  ranking: Array<{ title: string; subtitle: string | null; seconds: number; iconUrl: string | null }>;
+  journal: JournalDay[];
+  months: Array<{ month: string; seconds: number }>;
+};
+
+export function buildSourceDetail(id: SourceId, year = config.year): SourceDetail | null {
+  const summary = buildSummary(year);
+  const source = summary.sources.find((row) => row.id === id);
+  if (!source) return null;
+
+  return {
+    source,
+    ranking: getHighlights(id, year, 100),
+    journal: getJournal(year, id),
+    months: summary.months.map((month) => ({
+      month: month.month,
+      seconds: month.bySource[id] ?? 0,
+    })),
   };
 }

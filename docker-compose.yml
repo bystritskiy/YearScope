@@ -12,7 +12,7 @@ services:
       KOSHELF_BASE_URL: http://NAS_HOST:3003
       GOWITHME_PLAYER: your-nick
       LETTERBOXD_USER: your-nick
-      SYNC_INTERVAL_MINUTES: "60"
+      SYNC_INTERVAL_MINUTES: "1440"
     env_file:
       - .env
     volumes:

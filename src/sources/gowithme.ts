@@ -49,7 +49,7 @@ export const gowithme: Source = {
     replaceHighlights(
       'gowithme',
       year,
-      (data.topGames ?? []).slice(0, 10).map((game) => ({
+      (data.topGames ?? []).slice(0, 100).map((game) => ({
         title: game.title_name,
         subtitle: game.source ? (PLATFORM_LABELS[game.source] ?? game.source) : null,
         seconds: game.total_seconds,

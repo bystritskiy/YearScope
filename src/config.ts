@@ -22,8 +22,12 @@ export const config = {
   /** Год, за который считаем сводку. */
   year: envInt('YEARSCOPE_YEAR', new Date().getUTCFullYear()),
 
-  /** Как часто фоновая синхронизация опрашивает источники. */
-  syncIntervalMinutes: envInt('SYNC_INTERVAL_MINUTES', 60),
+  /**
+   * Как часто фоновая синхронизация опрашивает источники. Раз в сутки:
+   * данные за год от лишних опросов не меняются, а источники лучше не дёргать.
+   * Отсчёт идёт от старта сервиса, а не от полуночи.
+   */
+  syncIntervalMinutes: envInt('SYNC_INTERVAL_MINUTES', 1440),
 
   /** Синхронизировать сразу при старте сервиса. */
   syncOnBoot: env('SYNC_ON_BOOT', 'true') !== 'false',

@@ -1,6 +1,6 @@
 import { config } from '../config.ts';
 import { fetchJson } from '../http.ts';
-import { replaceDaily, replaceHighlights } from '../db.ts';
+import { replaceDaily, replaceHighlights, upsertEntries, type EntryRow } from '../db.ts';
 import type { Source, SyncResult } from './types.ts';
 
 type Period = { key: string; start_date: string; reading_time_sec: number };
@@ -30,6 +30,8 @@ export const koshelf: Source = {
     const secondsByDay = new Map<string, number>();
     const sessionsByDay = new Map<string, number>();
     const secondsByBook = new Map<string, { title: string; author: string | null; seconds: number }>();
+    // Чтение конкретной книги в конкретный день — строка журнала.
+    const byBookAndDay = new Map<string, EntryRow>();
 
     for (const month of months) {
       const calendar = await fetchJson<CalendarResponse>(
@@ -45,15 +47,29 @@ export const koshelf: Source = {
 
         const item = items[event.item_ref];
         const title = item?.title ?? 'Без названия';
+        const author = item?.authors?.[0]?.replace(/\s+/g, ' ').trim() ?? null;
+
+        // Одну книгу можно читать несколькими заходами за день — суммируем.
+        const entryKey = `${event.item_ref}|${event.start}`;
+        const entry = byBookAndDay.get(entryKey);
+        if (entry) {
+          entry.seconds += event.reading_time_sec;
+        } else {
+          byBookAndDay.set(entryKey, {
+            externalId: entryKey,
+            day: event.start,
+            seconds: event.reading_time_sec,
+            title,
+            subtitle: author,
+            meta: { pages: event.pages_read },
+          });
+        }
+
         const existing = secondsByBook.get(event.item_ref);
         if (existing) {
           existing.seconds += event.reading_time_sec;
         } else {
-          secondsByBook.set(event.item_ref, {
-            title,
-            author: item?.authors?.[0]?.replace(/\s+/g, ' ').trim() ?? null,
-            seconds: event.reading_time_sec,
-          });
+          secondsByBook.set(event.item_ref, { title, author, seconds: event.reading_time_sec });
         }
       }
     }
@@ -63,13 +79,14 @@ export const koshelf: Source = {
       .sort((a, b) => a.day.localeCompare(b.day));
 
     replaceDaily('koshelf', year, days);
+    upsertEntries('koshelf', [...byBookAndDay.values()]);
 
     replaceHighlights(
       'koshelf',
       year,
       [...secondsByBook.values()]
         .sort((a, b) => b.seconds - a.seconds)
-        .slice(0, 10)
+        .slice(0, 100)
         .map((book) => ({ title: book.title, subtitle: book.author, seconds: book.seconds })),
     );
 

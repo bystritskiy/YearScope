@@ -24,25 +24,53 @@
         </div>
       </header>
 
-      <section class="total" id="total" hidden>
-        <div class="total__value">
-          <span class="total__hours" id="total-hours">—</span>
-          <span class="total__unit">часов за год</span>
+      <nav class="tabs" id="tabs">
+        <button type="button" class="tab tab--active" data-view="summary">Сводка</button>
+        <button type="button" class="tab" data-view="journal">Журнал</button>
+      </nav>
+
+      <!-- Сводка -->
+      <section class="view" id="view-summary">
+        <div class="total" id="total" hidden>
+          <div class="total__value">
+            <span class="total__hours" id="total-hours">—</span>
+            <span class="total__unit">часов за год</span>
+          </div>
+          <div class="total__meta" id="total-meta"></div>
+          <div class="bar" id="total-bar"></div>
         </div>
-        <div class="total__meta" id="total-meta"></div>
-        <div class="bar" id="total-bar"></div>
+
+        <div class="cards" id="cards"></div>
+
+        <div class="panel" id="chart-panel" hidden>
+          <h2 class="panel__title">По месяцам</h2>
+          <div class="chart" id="chart"></div>
+        </div>
+
+        <div class="panel" id="gaps-panel" hidden>
+          <h2 class="panel__title">Что стоит знать о данных</h2>
+          <ul class="gaps" id="gaps"></ul>
+        </div>
       </section>
 
-      <section class="cards" id="cards"></section>
-
-      <section class="panel" id="chart-panel" hidden>
-        <h2 class="panel__title">По месяцам</h2>
-        <div class="chart" id="chart"></div>
+      <!-- Журнал -->
+      <section class="view" id="view-journal" hidden>
+        <div class="filters" id="journal-filters"></div>
+        <div class="feed" id="journal-feed"></div>
       </section>
 
-      <section class="panel" id="gaps-panel" hidden>
-        <h2 class="panel__title">Что стоит знать о данных</h2>
-        <ul class="gaps" id="gaps"></ul>
+      <!-- Один источник -->
+      <section class="view" id="view-source" hidden>
+        <button type="button" class="back" id="source-back">← к сводке</button>
+        <div class="detail" id="source-head"></div>
+        <div class="panel">
+          <h2 class="panel__title" id="ranking-title">Всё за год</h2>
+          <ol class="ranking" id="source-ranking"></ol>
+        </div>
+        <div class="panel">
+          <h2 class="panel__title">Лента</h2>
+          <div class="feed" id="source-feed"></div>
+        </div>
       </section>
     </main>
 

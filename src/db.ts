@@ -383,6 +383,105 @@ export function getTopEntries(source: SourceId, year: number, limit = 10): Entry
   }));
 }
 
+export type JournalItem = {
+  source: string;
+  title: string;
+  subtitle: string | null;
+  seconds: number;
+  estimated: boolean;
+  /** item — конкретная запись (фильм, серия), day — дневной итог источника. */
+  kind: 'item' | 'day';
+};
+
+export type JournalDay = { day: string; total: number; items: JournalItem[] };
+
+/** «1 сессия», «2 сессии», «8 сессий». */
+function pluralSessions(count: number): string {
+  const mod10 = count % 10;
+  const mod100 = count % 100;
+  if (mod10 === 1 && mod100 !== 11) return 'сессия';
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return 'сессии';
+  return 'сессий';
+}
+
+/**
+ * Лента активностей по дням, сверху свежее.
+ *
+ * У источников разная детализация: фильмы, серии, книги и тренировки лежат
+ * поштучно, а gowithme не отдаёт разбивку по играм за день в разрезе игрока —
+ * только суммарное время. Поэтому такие источники попадают в ленту одной
+ * дневной строкой, а не выдумываются задним числом.
+ */
+export function getJournal(year: number, source?: SourceId): JournalDay[] {
+  const { from, to } = yearRange(year);
+
+  const entryFilter = source ? 'AND source = ?' : '';
+  const entries = db
+    .prepare(
+      `SELECT source, day, title, subtitle, seconds, estimated FROM entries
+        WHERE day BETWEEN ? AND ? ${entryFilter}
+        ORDER BY seconds DESC`,
+    )
+    .all(...(source ? [from, to, source] : [from, to])) as Array<Record<string, unknown>>;
+
+  // Источники, у которых поштучных записей нет вовсе, показываем дневным итогом.
+  const detailed = new Set(
+    (db.prepare('SELECT DISTINCT source FROM entries').all() as Array<{ source: string }>).map(
+      (row) => row.source,
+    ),
+  );
+  const aggregateFilter = source ? 'AND source = ?' : '';
+  const aggregates = (
+    db
+      .prepare(
+        `SELECT source, day, seconds, items FROM daily
+          WHERE day BETWEEN ? AND ? ${aggregateFilter}`,
+      )
+      .all(...(source ? [from, to, source] : [from, to])) as Array<Record<string, unknown>>
+  ).filter((row) => !detailed.has(row.source as string));
+
+  const byDay = new Map<string, JournalDay>();
+  const dayOf = (day: string): JournalDay => {
+    let entry = byDay.get(day);
+    if (!entry) {
+      entry = { day, total: 0, items: [] };
+      byDay.set(day, entry);
+    }
+    return entry;
+  };
+
+  for (const row of entries) {
+    const day = dayOf(row.day as string);
+    day.items.push({
+      source: row.source as string,
+      title: row.title as string,
+      subtitle: (row.subtitle as string) ?? null,
+      seconds: row.seconds as number,
+      estimated: Boolean(row.estimated),
+      kind: 'item',
+    });
+    day.total += row.seconds as number;
+  }
+
+  for (const row of aggregates) {
+    const day = dayOf(row.day as string);
+    const sessions = row.items as number;
+    day.items.push({
+      source: row.source as string,
+      title: 'за день',
+      subtitle: sessions > 0 ? `${sessions} ${pluralSessions(sessions)}` : null,
+      seconds: row.seconds as number,
+      estimated: false,
+      kind: 'day',
+    });
+    day.total += row.seconds as number;
+  }
+
+  return [...byDay.values()]
+    .map((day) => ({ ...day, items: day.items.sort((a, b) => b.seconds - a.seconds) }))
+    .sort((a, b) => b.day.localeCompare(a.day));
+}
+
 export function countEntries(source: SourceId, year: number): number {
   const { from, to } = yearRange(year);
   const row = db

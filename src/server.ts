@@ -1,8 +1,9 @@
 import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { extname, join, normalize } from 'node:path';
-import { config } from './config.ts';
-import { buildSummary } from './summary.ts';
+import { SOURCE_ORDER, config, type SourceId } from './config.ts';
+import { getJournal } from './db.ts';
+import { buildSourceDetail, buildSummary } from './summary.ts';
 import { isSyncRunning, logReports, runSync, startScheduler } from './sync.ts';
 
 const PUBLIC_DIR = join(import.meta.dirname, '..', 'public');
@@ -49,17 +50,62 @@ async function serveStatic(
   }
 }
 
+/** Год из строки запроса; null — если передана ерунда. */
+function parseYear(url: URL): number | null {
+  const raw = url.searchParams.get('year');
+  if (!raw) return config.year;
+  const year = Number.parseInt(raw, 10);
+  return Number.isFinite(year) && year > 1970 && year < 3000 ? year : null;
+}
+
 const server = createServer((request, response) => {
   const url = new URL(request.url ?? '/', `http://${request.headers.host ?? 'localhost'}`);
 
   if (url.pathname === '/api/summary') {
-    const yearParam = url.searchParams.get('year');
-    const year = yearParam ? Number.parseInt(yearParam, 10) : config.year;
-    if (!Number.isFinite(year)) {
+    const year = parseYear(url);
+    if (year === null) {
       sendJson(response, 400, { error: 'год указан неверно' });
       return;
     }
     sendJson(response, 200, buildSummary(year));
+    return;
+  }
+
+  if (url.pathname === '/api/journal') {
+    const year = parseYear(url);
+    if (year === null) {
+      sendJson(response, 400, { error: 'год указан неверно' });
+      return;
+    }
+    const source = url.searchParams.get('source');
+    if (source && !SOURCE_ORDER.includes(source as SourceId)) {
+      sendJson(response, 404, { error: 'неизвестный источник' });
+      return;
+    }
+    sendJson(response, 200, {
+      year,
+      days: getJournal(year, (source as SourceId) ?? undefined),
+    });
+    return;
+  }
+
+  if (url.pathname === '/api/source') {
+    const year = parseYear(url);
+    const id = url.searchParams.get('id');
+    if (year === null) {
+      sendJson(response, 400, { error: 'год указан неверно' });
+      return;
+    }
+    if (!id || !SOURCE_ORDER.includes(id as SourceId)) {
+      sendJson(response, 404, { error: 'неизвестный источник' });
+      return;
+    }
+    const detail = buildSourceDetail(id as SourceId, year);
+    if (!detail) {
+      sendJson(response, 404, { error: 'нет данных по источнику' });
+      return;
+    }
+    sendJson(response, 200, detail);
     return;
   }
 

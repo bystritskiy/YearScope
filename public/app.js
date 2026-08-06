@@ -4,6 +4,7 @@ const el = {
   subtitle: document.getElementById('subtitle'),
   stamp: document.getElementById('stamp'),
   sync: document.getElementById('sync'),
+  tabs: document.getElementById('tabs'),
   total: document.getElementById('total'),
   totalHours: document.getElementById('total-hours'),
   totalMeta: document.getElementById('total-meta'),
@@ -13,7 +14,23 @@ const el = {
   chart: document.getElementById('chart'),
   gapsPanel: document.getElementById('gaps-panel'),
   gaps: document.getElementById('gaps'),
+  journalFilters: document.getElementById('journal-filters'),
+  journalFeed: document.getElementById('journal-feed'),
+  sourceBack: document.getElementById('source-back'),
+  sourceHead: document.getElementById('source-head'),
+  sourceRanking: document.getElementById('source-ranking'),
+  sourceFeed: document.getElementById('source-feed'),
+  rankingTitle: document.getElementById('ranking-title'),
+  views: {
+    summary: document.getElementById('view-summary'),
+    journal: document.getElementById('view-journal'),
+    source: document.getElementById('view-source'),
+  },
 };
+
+/** Последняя загруженная сводка — из неё берутся иконки и цвета для ленты. */
+let summaryData = null;
+let journalFilter = null;
 
 const hours = (seconds) => seconds / 3600;
 
@@ -34,7 +51,7 @@ function formatHours(seconds) {
   return String(Math.round(value));
 }
 
-/** 293917 сек → «81 ч 38 мин»: для точных подписей, где округление до часов теряет смысл. */
+/** 293917 сек → «81 ч 38 мин»: для подписей, где округление до часов теряет смысл. */
 function formatExact(seconds) {
   const h = Math.floor(seconds / 3600);
   const m = Math.round((seconds % 3600) / 60);
@@ -57,12 +74,37 @@ function formatDay(iso) {
   return new Date(`${iso}T00:00:00`).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' });
 }
 
+function weekdayOf(iso) {
+  return new Date(`${iso}T00:00:00`).toLocaleDateString('ru-RU', { weekday: 'long' });
+}
+
 function node(tag, className, text) {
   const element = document.createElement(tag);
   if (className) element.className = className;
   if (text !== undefined) element.textContent = text;
   return element;
 }
+
+const metaOf = (sourceId) =>
+  summaryData?.sources.find((source) => source.id === sourceId) ?? {
+    icon: '•',
+    label: sourceId,
+    accent: '#555',
+  };
+
+/* --- переключение экранов --- */
+
+function showView(name) {
+  for (const [key, view] of Object.entries(el.views)) view.hidden = key !== name;
+  // Вкладка «Сводка» остаётся подсвеченной на экране источника: он её продолжение.
+  const activeTab = name === 'journal' ? 'journal' : 'summary';
+  for (const tab of el.tabs.querySelectorAll('.tab')) {
+    tab.classList.toggle('tab--active', tab.dataset.view === activeTab);
+  }
+  window.scrollTo({ top: 0 });
+}
+
+/* --- сводка --- */
 
 function renderTotal(data) {
   const active = data.sources.filter((source) => source.seconds > 0);
@@ -93,6 +135,22 @@ function renderCard(source) {
   const card = node('article', 'card');
   card.style.setProperty('--accent', source.accent);
   if (source.seconds === 0) card.classList.add('card--empty');
+
+  // Кликабельны только карточки, внутри которых есть что показать.
+  if (source.seconds > 0) {
+    card.classList.add('card--link');
+    card.tabIndex = 0;
+    card.setAttribute('role', 'button');
+    card.title = `${source.label}: открыть всё за год`;
+    const open = () => openSource(source.id);
+    card.addEventListener('click', open);
+    card.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        open();
+      }
+    });
+  }
 
   const head = node('div', 'card__head');
   head.append(node('span', 'card__icon', source.icon), node('span', 'card__label', source.label));
@@ -206,20 +264,152 @@ function renderGaps(data) {
   );
 }
 
+/* --- лента --- */
+
+function renderEvent(item) {
+  const meta = metaOf(item.source);
+  const row = node('div', `event${item.kind === 'day' ? ' event--day' : ''}`);
+
+  row.append(node('span', 'event__icon', meta.icon));
+
+  const body = node('div', 'event__body');
+  // Дневной итог без разбивки подписываем источником, иначе «за день» ни о чём.
+  body.append(node('div', 'event__title', item.kind === 'day' ? `${meta.label} — за день` : item.title));
+  if (item.subtitle) body.append(node('div', 'event__sub', item.subtitle));
+  row.append(body);
+
+  const time = node('span', 'event__time', formatExact(item.seconds));
+  if (item.estimated) time.title = 'время посчитано оценкой';
+  row.append(time);
+
+  return row;
+}
+
+function renderFeed(container, days) {
+  if (days.length === 0) {
+    container.replaceChildren(node('div', 'feed__empty', 'за этот год событий нет'));
+    return;
+  }
+
+  container.replaceChildren(
+    ...days.map((day) => {
+      const block = node('div', 'day');
+
+      const head = node('div', 'day__head');
+      const date = node('div', 'day__date', formatDay(day.day));
+      date.append(node('span', 'day__weekday', weekdayOf(day.day)));
+      head.append(date, node('div', 'day__total', formatExact(day.total)));
+      block.append(head);
+
+      const items = node('div', 'day__items');
+      items.append(...day.items.map(renderEvent));
+      block.append(items);
+
+      return block;
+    }),
+  );
+}
+
+function renderJournalFilters() {
+  const chips = [{ id: null, label: 'Всё', accent: '#2a3240' }];
+  for (const source of summaryData?.sources ?? []) {
+    if (source.seconds > 0) chips.push({ id: source.id, label: source.label, accent: source.accent });
+  }
+
+  el.journalFilters.replaceChildren(
+    ...chips.map((chip) => {
+      const button = node('button', 'chip', chip.label);
+      button.type = 'button';
+      button.style.setProperty('--chip-accent', chip.accent);
+      if (chip.id === journalFilter) button.classList.add('chip--active');
+      button.addEventListener('click', () => {
+        journalFilter = chip.id;
+        renderJournalFilters();
+        loadJournal();
+      });
+      return button;
+    }),
+  );
+}
+
+async function loadJournal() {
+  const query = journalFilter ? `?source=${encodeURIComponent(journalFilter)}` : '';
+  const data = await fetch(`/api/journal${query}`).then((response) => response.json());
+  renderFeed(el.journalFeed, data.days);
+}
+
+/* --- экран одного источника --- */
+
+async function openSource(id) {
+  const detail = await fetch(`/api/source?id=${encodeURIComponent(id)}`).then((response) =>
+    response.json(),
+  );
+  const source = detail.source;
+
+  el.sourceHead.style.setProperty('--accent', source.accent);
+  const value = node('div', 'detail__hours');
+  value.append(document.createTextNode(formatHours(source.seconds)));
+  value.append(node('small', null, pluralHours(hours(source.seconds))));
+
+  const activeDays = detail.journal.length;
+  el.sourceHead.replaceChildren(
+    node('div', 'detail__label', `${source.icon} ${source.label}`),
+    value,
+    node(
+      'div',
+      'detail__meta',
+      `${formatExact(source.seconds)} · ${Math.round(source.share * 100)}% всего времени · ${activeDays} активных дней`,
+    ),
+  );
+
+  const max = detail.ranking[0]?.seconds ?? 1;
+  el.rankingTitle.textContent = `Всё за год — ${detail.ranking.length}`;
+  el.sourceRanking.replaceChildren(
+    ...detail.ranking.map((item) => {
+      const row = document.createElement('li');
+      const title = node('div', 'ranking__title', item.title);
+      if (item.subtitle) title.append(node('span', 'ranking__sub', ` · ${item.subtitle}`));
+      row.append(title, node('span', 'ranking__time', formatExact(item.seconds)));
+
+      // Полоска показывает вес позиции относительно первой строки.
+      const bar = node('div', 'ranking__bar');
+      bar.style.width = `${Math.max((item.seconds / max) * 100, 1)}%`;
+      bar.style.background = source.accent;
+      row.append(bar);
+      return row;
+    }),
+  );
+
+  renderFeed(el.sourceFeed, detail.journal);
+  showView('source');
+}
+
+/* --- загрузка --- */
+
 async function load() {
   const response = await fetch('/api/summary');
   if (!response.ok) throw new Error(`сервер ответил ${response.status}`);
-  const data = await response.json();
+  summaryData = await response.json();
 
-  document.title = `YearScope ${data.year} — ${formatHours(data.totalSeconds)} ч`;
-  el.subtitle.textContent = `сколько времени ушло на активности в ${data.year} году`;
-  el.stamp.textContent = `обновлено ${formatDate(data.generatedAt) ?? ''}`;
+  document.title = `YearScope ${summaryData.year} — ${formatHours(summaryData.totalSeconds)} ч`;
+  el.subtitle.textContent = `сколько времени ушло на активности в ${summaryData.year} году`;
+  el.stamp.textContent = `обновлено ${formatDate(summaryData.generatedAt) ?? ''}`;
 
-  renderTotal(data);
-  el.cards.replaceChildren(...data.sources.map(renderCard));
-  renderChart(data);
-  renderGaps(data);
+  renderTotal(summaryData);
+  el.cards.replaceChildren(...summaryData.sources.map(renderCard));
+  renderChart(summaryData);
+  renderGaps(summaryData);
+  renderJournalFilters();
 }
+
+el.tabs.addEventListener('click', (event) => {
+  const tab = event.target.closest('.tab');
+  if (!tab) return;
+  showView(tab.dataset.view);
+  if (tab.dataset.view === 'journal' && el.journalFeed.childElementCount === 0) loadJournal();
+});
+
+el.sourceBack.addEventListener('click', () => showView('summary'));
 
 el.sync.addEventListener('click', async () => {
   el.sync.disabled = true;
@@ -233,6 +423,7 @@ el.sync.addEventListener('click', async () => {
       if (!health.syncing) break;
     }
     await load();
+    if (!el.views.journal.hidden) await loadJournal();
   } catch (error) {
     el.subtitle.textContent = `не удалось обновить: ${error.message}`;
   } finally {

@@ -215,7 +215,7 @@ export const myshows: Source = {
       year,
       [...byShow.entries()]
         .sort((a, b) => b[1] - a[1])
-        .slice(0, 10)
+        .slice(0, 100)
         .map(([show, seconds]) => ({ title: show, subtitle: null, seconds })),
     );
 

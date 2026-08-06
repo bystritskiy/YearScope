@@ -132,7 +132,7 @@ export const letterboxd: Source = {
       rows
         .slice()
         .sort((a, b) => b.seconds - a.seconds)
-        .slice(0, 10)
+        .slice(0, 100)
         .map((row) => ({ title: row.title, subtitle: row.subtitle, seconds: row.seconds })),
     );
 
