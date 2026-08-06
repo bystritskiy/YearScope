@@ -17,6 +17,8 @@ export type SourceSummary = {
   lastRun: string | null;
   /** С какой даты у источника есть данные — если это не 1 января, показываем предупреждение. */
   coversFrom: string | null;
+  /** Оговорка о полноте данных от самого источника. */
+  warning: string | null;
   granularity: 'day' | 'month' | null;
   highlights: Array<{ title: string; subtitle: string | null; seconds: number; iconUrl: string | null }>;
 };
@@ -58,6 +60,7 @@ export function buildSummary(year = config.year): Summary {
       message: (state?.message as string) ?? null,
       lastRun: (state?.last_run as string) ?? null,
       coversFrom: (state?.covers_from as string) ?? null,
+      warning: (state?.warning as string) ?? null,
       granularity: (state?.granularity as 'day' | 'month') ?? null,
       highlights: getHighlights(id, year, 5),
     };

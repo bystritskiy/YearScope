@@ -38,6 +38,17 @@ export const config = {
       enabled: env('KOSHELF_ENABLED', 'true') !== 'false',
       baseUrl: env('KOSHELF_BASE_URL', 'http://NAS_HOST:3003'),
     },
+    myshows: {
+      enabled: env('MYSHOWS_ENABLED', 'true') !== 'false',
+      apiUrl: env('MYSHOWS_API_URL', 'https://api.myshows.me/v2/rpc/'),
+      login: env('MYSHOWS_LOGIN', 'your-nick'),
+      /**
+       * История берётся из выгрузки профиля (лежит в data/imports),
+       * потому что публичный API отдаёт лишь 25 последних отметок.
+       */
+      importDir: env('MYSHOWS_IMPORT_DIR', join(env('DATA_DIR', join(process.cwd(), 'data')), 'imports')),
+      fallbackEpisodeMinutes: envInt('MYSHOWS_FALLBACK_EPISODE_MINUTES', 45),
+    },
     letterboxd: {
       enabled: env('LETTERBOXD_ENABLED', 'true') !== 'false',
       baseUrl: env('LETTERBOXD_BASE_URL', 'https://letterboxd.com'),

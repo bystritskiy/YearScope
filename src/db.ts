@@ -34,6 +34,8 @@ export type SyncStatus = {
   coversFrom?: string | null;
   granularity?: Granularity;
   durationMs?: number;
+  /** Оговорка о полноте данных — попадает в блок «Что стоит знать о данных». */
+  warning?: string | null;
 };
 
 mkdirSync(config.dataDir, { recursive: true });
@@ -96,6 +98,14 @@ db.exec(`
     fetched_at   TEXT NOT NULL
   );
 
+  -- Хронометраж серии у сериала: в выгрузке есть не всегда, а дёргать
+  -- shows.GetById на каждый синк ради неменяющегося числа бессмысленно.
+  CREATE TABLE IF NOT EXISTS show_runtime (
+    show         TEXT PRIMARY KEY,
+    runtime_min  INTEGER,
+    fetched_at   TEXT NOT NULL
+  );
+
   CREATE TABLE IF NOT EXISTS sync_state (
     source       TEXT PRIMARY KEY,
     last_run     TEXT NOT NULL,
@@ -106,6 +116,16 @@ db.exec(`
     duration_ms  INTEGER
   );
 `);
+
+/** Добавляет колонку, если её ещё нет: CREATE TABLE IF NOT EXISTS их не досоздаёт. */
+function ensureColumn(table: string, column: string, definition: string): void {
+  const columns = db.prepare(`PRAGMA table_info(${table})`).all() as Array<{ name: string }>;
+  if (!columns.some((row) => row.name === column)) {
+    db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
+  }
+}
+
+ensureColumn('sync_state', 'warning', 'TEXT');
 
 const yearRange = (year: number) => ({ from: `${year}-01-01`, to: `${year}-12-31` });
 
@@ -265,11 +285,24 @@ export function cacheRuntime(tmdbId: number, runtimeMin: number | null, title: s
   ).run(tmdbId, runtimeMin, title, new Date().toISOString());
 }
 
+export function getShowRuntime(show: string): number | null | undefined {
+  const row = db.prepare('SELECT runtime_min FROM show_runtime WHERE show = ?').get(show) as
+    | { runtime_min: number | null }
+    | undefined;
+  return row === undefined ? undefined : row.runtime_min;
+}
+
+export function cacheShowRuntime(show: string, runtimeMin: number | null): void {
+  db.prepare(
+    'INSERT OR REPLACE INTO show_runtime (show, runtime_min, fetched_at) VALUES (?, ?, ?)',
+  ).run(show, runtimeMin, new Date().toISOString());
+}
+
 export function recordSync(state: SyncStatus): void {
   db.prepare(
     `INSERT OR REPLACE INTO sync_state
-       (source, last_run, status, message, covers_from, granularity, duration_ms)
-     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+       (source, last_run, status, message, covers_from, granularity, duration_ms, warning)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
   ).run(
     state.source,
     new Date().toISOString(),
@@ -278,6 +311,7 @@ export function recordSync(state: SyncStatus): void {
     state.coversFrom ?? null,
     state.granularity ?? null,
     state.durationMs ?? null,
+    state.warning ?? null,
   );
 }
 

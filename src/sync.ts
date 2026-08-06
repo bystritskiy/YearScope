@@ -28,6 +28,7 @@ async function syncOne(source: (typeof sources)[number], year: number): Promise<
       coversFrom: result.coversFrom,
       granularity: result.granularity,
       durationMs,
+      warning: result.warning,
     });
     return { source: source.id, status: 'ok', message: result.summary, durationMs };
   } catch (error) {

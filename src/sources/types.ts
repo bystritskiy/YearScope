@@ -7,6 +7,8 @@ export type SyncResult = {
   granularity: Granularity;
   /** Короткая строка в лог: что именно приехало. */
   summary: string;
+  /** Оговорка о полноте данных, если она есть — показывается на экране. */
+  warning?: string | null;
 };
 
 export type Source = {

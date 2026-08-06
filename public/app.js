@@ -188,6 +188,9 @@ function renderGaps(data) {
         text: `данные есть только с ${formatDay(source.coversFrom)} — раньше источник не вёл учёт`,
       });
     }
+    if (source.warning) {
+      notes.push({ level: 'warn', label: source.label, text: source.warning });
+    }
   }
 
   el.gapsPanel.hidden = notes.length === 0;
