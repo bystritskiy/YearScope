@@ -49,6 +49,17 @@ export const config = {
       importDir: env('MYSHOWS_IMPORT_DIR', join(env('DATA_DIR', join(process.cwd(), 'data')), 'imports')),
       fallbackEpisodeMinutes: envInt('MYSHOWS_FALLBACK_EPISODE_MINUTES', 45),
     },
+    intervals: {
+      /**
+       * Ключ берётся на intervals.icu → Settings → Developer Settings.
+       * Без него источник просто выключен: тренировки прилетают в intervals.icu
+       * из Garmin сами, поэтому отдельный коннектор к Garmin не нужен.
+       */
+      apiKey: env('INTERVALS_API_KEY', ''),
+      baseUrl: env('INTERVALS_BASE_URL', 'https://intervals.icu'),
+      /** 0 означает «текущий атлет», то есть владелец ключа. */
+      athleteId: env('INTERVALS_ATHLETE_ID', '0'),
+    },
     letterboxd: {
       enabled: env('LETTERBOXD_ENABLED', 'true') !== 'false',
       baseUrl: env('LETTERBOXD_BASE_URL', 'https://letterboxd.com'),
@@ -63,7 +74,7 @@ export const config = {
   },
 } as const;
 
-export type SourceId = 'gowithme' | 'myshows' | 'letterboxd' | 'koshelf' | 'garmin';
+export type SourceId = 'gowithme' | 'myshows' | 'letterboxd' | 'koshelf' | 'intervals';
 
 /** Порядок и подписи активностей на экране сводки. */
 export const SOURCE_META: Record<SourceId, { label: string; icon: string; accent: string }> = {
@@ -71,7 +82,7 @@ export const SOURCE_META: Record<SourceId, { label: string; icon: string; accent
   myshows: { label: 'Сериалы', icon: '📺', accent: '#31b0d5' },
   letterboxd: { label: 'Кино', icon: '🎬', accent: '#40bf6a' },
   koshelf: { label: 'Книги', icon: '📚', accent: '#e0913a' },
-  garmin: { label: 'Тренировки', icon: '🏃', accent: '#00a3e0' },
+  intervals: { label: 'Тренировки', icon: '🏃', accent: '#e05a8a' },
 };
 
-export const SOURCE_ORDER: SourceId[] = ['gowithme', 'myshows', 'letterboxd', 'koshelf', 'garmin'];
+export const SOURCE_ORDER: SourceId[] = ['gowithme', 'myshows', 'letterboxd', 'koshelf', 'intervals'];
