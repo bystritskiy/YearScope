@@ -4,7 +4,9 @@ services:
     container_name: yearscope
     restart: unless-stopped
     ports:
-      - "3010:3010"
+      # Снаружи 3011: на NAS порт 3010 уже занят dawarich_app.
+      # Внутри контейнера сервис всегда слушает 3010.
+      - "${YEARSCOPE_PORT:-3011}:3010"
     environment:
       # Часовой пояс должен совпадать с KoShelf, иначе чтение будет
       # раскладываться по соседним дням и месячные суммы разъедутся.
