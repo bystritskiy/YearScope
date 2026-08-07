@@ -20,6 +20,15 @@
         </div>
         <div class="top__actions">
           <span class="stamp" id="stamp"></span>
+          <div class="export" id="export">
+            <button type="button" class="btn" id="export-toggle" aria-expanded="false" aria-haspopup="true">
+              Экспорт
+            </button>
+            <div class="export__menu" id="export-menu" hidden>
+              <a class="export__item" id="export-json" href="/api/export?format=json">JSON — всё за год</a>
+              <a class="export__item" id="export-csv" href="/api/export?format=csv">CSV — журнал</a>
+            </div>
+          </div>
           <button type="button" id="sync" class="btn">Обновить</button>
         </div>
       </header>

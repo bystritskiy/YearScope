@@ -126,6 +126,7 @@ function ensureColumn(table: string, column: string, definition: string): void {
 }
 
 ensureColumn('sync_state', 'warning', 'TEXT');
+ensureColumn('film_runtime', 'director', 'TEXT');
 
 const yearRange = (year: number) => ({ from: `${year}-01-01`, to: `${year}-12-31` });
 
@@ -304,18 +305,39 @@ export function getHighlights(source: SourceId, year: number, limit = 5): Highli
   }));
 }
 
+export type FilmCache = {
+  runtimeMin: number | null;
+  /** null — ещё не запрашивали; '' — в TMDB режиссёра нет. */
+  director: string | null;
+};
+
+export function getCachedFilm(tmdbId: number): FilmCache | null {
+  const row = db
+    .prepare('SELECT runtime_min, director FROM film_runtime WHERE tmdb_id = ?')
+    .get(tmdbId) as { runtime_min: number | null; director: string | null } | undefined;
+  if (!row) return null;
+  return { runtimeMin: row.runtime_min, director: row.director };
+}
+
 export function getCachedRuntime(tmdbId: number): number | null {
-  const row = db.prepare('SELECT runtime_min FROM film_runtime WHERE tmdb_id = ?').get(tmdbId) as
-    | { runtime_min: number | null }
-    | undefined;
-  return row?.runtime_min ?? null;
+  return getCachedFilm(tmdbId)?.runtimeMin ?? null;
+}
+
+export function cacheFilm(
+  tmdbId: number,
+  runtimeMin: number | null,
+  title: string,
+  director: string | null,
+): void {
+  db.prepare(
+    `INSERT OR REPLACE INTO film_runtime (tmdb_id, runtime_min, title, director, fetched_at)
+     VALUES (?, ?, ?, ?, ?)`,
+  ).run(tmdbId, runtimeMin, title, director, new Date().toISOString());
 }
 
 export function cacheRuntime(tmdbId: number, runtimeMin: number | null, title: string): void {
-  db.prepare(
-    `INSERT OR REPLACE INTO film_runtime (tmdb_id, runtime_min, title, fetched_at)
-     VALUES (?, ?, ?, ?)`,
-  ).run(tmdbId, runtimeMin, title, new Date().toISOString());
+  const prev = getCachedFilm(tmdbId);
+  cacheFilm(tmdbId, runtimeMin, title, prev?.director ?? null);
 }
 
 export function getShowRuntime(show: string): number | null | undefined {

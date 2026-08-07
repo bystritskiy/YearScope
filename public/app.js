@@ -4,6 +4,11 @@ const el = {
   subtitle: document.getElementById('subtitle'),
   stamp: document.getElementById('stamp'),
   sync: document.getElementById('sync'),
+  exportRoot: document.getElementById('export'),
+  exportToggle: document.getElementById('export-toggle'),
+  exportMenu: document.getElementById('export-menu'),
+  exportJson: document.getElementById('export-json'),
+  exportCsv: document.getElementById('export-csv'),
   tabs: document.getElementById('tabs'),
   total: document.getElementById('total'),
   totalHours: document.getElementById('total-hours'),
@@ -277,14 +282,28 @@ function eventCopy(item) {
       // title — серия, subtitle — название сериала
       return {
         title: item.title ? `Смотрел серию «${item.title}»` : 'Смотрел серию',
-        subtitle: item.subtitle,
+        subtitle: item.subtitle ? `Сериал ${item.subtitle}` : null,
       };
     case 'gowithme':
-      return { title: `Играл в «${item.title}»`, subtitle: item.subtitle };
+      return {
+        title: `Играл в «${item.title}»`,
+        subtitle: item.subtitle ? `Платформа ${item.subtitle}` : null,
+      };
     case 'letterboxd':
-      return { title: `Смотрел фильм «${item.title}»`, subtitle: item.subtitle };
+      return {
+        title: `Смотрел фильм «${item.title}»`,
+        // Год оставляем как есть, пока режиссёр ещё не подтянут из TMDB.
+        subtitle: item.subtitle
+          ? /^\d{4}$/.test(item.subtitle)
+            ? item.subtitle
+            : `Режиссёр ${item.subtitle}`
+          : null,
+      };
     case 'koshelf':
-      return { title: `Читал «${item.title}»`, subtitle: item.subtitle };
+      return {
+        title: `Читал «${item.title}»`,
+        subtitle: item.subtitle ? `Автор ${item.subtitle}` : null,
+      };
     case 'intervals':
       return { title: item.title, subtitle: item.subtitle };
     default:
@@ -417,8 +436,12 @@ async function load() {
   if (!response.ok) throw new Error(`сервер ответил ${response.status}`);
   summaryData = await response.json();
 
-  document.title = `YearScope ${summaryData.year} — ${formatHours(summaryData.totalSeconds)} ч`;
-  el.subtitle.textContent = `сколько времени ушло на активности в ${summaryData.year} году`;
+  const year = summaryData.year;
+  el.exportJson.href = `/api/export?year=${year}&format=json`;
+  el.exportCsv.href = `/api/export?year=${year}&format=csv`;
+
+  document.title = `YearScope ${year} — ${formatHours(summaryData.totalSeconds)} ч`;
+  el.subtitle.textContent = `сколько времени ушло на активности в ${year} году`;
   el.stamp.textContent = `обновлено ${formatDate(summaryData.generatedAt) ?? ''}`;
 
   renderTotal(summaryData);
@@ -427,6 +450,26 @@ async function load() {
   renderGaps(summaryData);
   renderJournalFilters();
 }
+
+function setExportOpen(open) {
+  el.exportMenu.hidden = !open;
+  el.exportToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+}
+
+el.exportToggle.addEventListener('click', (event) => {
+  event.stopPropagation();
+  setExportOpen(el.exportMenu.hidden);
+});
+
+el.exportMenu.addEventListener('click', () => setExportOpen(false));
+
+document.addEventListener('click', (event) => {
+  if (!el.exportRoot.contains(event.target)) setExportOpen(false);
+});
+
+document.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape') setExportOpen(false);
+});
 
 el.tabs.addEventListener('click', (event) => {
   const tab = event.target.closest('.tab');

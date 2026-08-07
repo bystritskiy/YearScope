@@ -1,9 +1,10 @@
 import { config } from '../config.ts';
 import { fetchJson, fetchText } from '../http.ts';
 import {
-  cacheRuntime,
+  cacheFilm,
   countEntries,
-  getCachedRuntime,
+  db,
+  getCachedFilm,
   rebuildDailyFromEntries,
   replaceHighlights,
   upsertEntries,
@@ -25,6 +26,11 @@ type Viewing = {
   tmdbId: number | null;
   rewatch: boolean;
   rating: number | null;
+};
+
+type FilmInfo = {
+  runtimeMin: number | null;
+  director: string | null;
 };
 
 const tag = (xml: string, name: string): string | null => {
@@ -70,25 +76,41 @@ export function parseRss(xml: string): Viewing[] {
   return viewings;
 }
 
-/** Хронометраж из TMDB с вечным кэшем; null — если ключа нет или фильм не найден. */
-async function resolveRuntime(viewing: Viewing): Promise<number | null> {
-  const { tmdbApiKey } = config.sources.letterboxd;
-  if (!viewing.tmdbId || !tmdbApiKey) return null;
+function pickDirector(crew: Array<{ job?: string; name?: string }> | undefined): string | null {
+  const names = (crew ?? [])
+    .filter((person) => person.job === 'Director' && person.name)
+    .map((person) => person.name as string);
+  if (names.length === 0) return '';
+  return names.join(', ');
+}
 
-  const cached = getCachedRuntime(viewing.tmdbId);
-  if (cached !== null) return cached;
+/** Хронометраж и режиссёр из TMDB с вечным кэшем; без ключа — пусто. */
+async function resolveFilm(tmdbId: number | null, title: string): Promise<FilmInfo> {
+  const { tmdbApiKey } = config.sources.letterboxd;
+  if (!tmdbId || !tmdbApiKey) return { runtimeMin: null, director: null };
+
+  const cached = getCachedFilm(tmdbId);
+  // director === null значит колонку ещё не заполняли — доберём credits.
+  if (cached && cached.director !== null) {
+    return { runtimeMin: cached.runtimeMin, director: cached.director || null };
+  }
 
   try {
-    const movie = await fetchJson<{ runtime?: number | null; title?: string }>(
-      `https://api.themoviedb.org/3/movie/${viewing.tmdbId}?api_key=${tmdbApiKey}`,
+    const movie = await fetchJson<{
+      runtime?: number | null;
+      title?: string;
+      credits?: { crew?: Array<{ job?: string; name?: string }> };
+    }>(
+      `https://api.themoviedb.org/3/movie/${tmdbId}?api_key=${tmdbApiKey}&append_to_response=credits`,
       { retries: 1 },
     );
-    const runtime = typeof movie.runtime === 'number' && movie.runtime > 0 ? movie.runtime : null;
-    cacheRuntime(viewing.tmdbId, runtime, movie.title ?? viewing.title);
-    return runtime;
+    const runtimeMin = typeof movie.runtime === 'number' && movie.runtime > 0 ? movie.runtime : null;
+    const director = pickDirector(movie.credits?.crew);
+    cacheFilm(tmdbId, runtimeMin, movie.title ?? title, director);
+    return { runtimeMin, director: director || null };
   } catch {
     // Сеть или лимит TMDB — не роняем синк, фильм получит оценочное время.
-    return null;
+    return { runtimeMin: cached?.runtimeMin ?? null, director: null };
   }
 }
 
@@ -106,22 +128,64 @@ export const letterboxd: Source = {
     let estimatedCount = 0;
 
     for (const viewing of viewings) {
-      const runtime = await resolveRuntime(viewing);
-      const minutes = runtime ?? fallbackRuntimeMinutes;
-      if (runtime === null) estimatedCount += 1;
+      const film = await resolveFilm(viewing.tmdbId, viewing.title);
+      const minutes = film.runtimeMin ?? fallbackRuntimeMinutes;
+      if (film.runtimeMin === null) estimatedCount += 1;
 
       rows.push({
         externalId: viewing.guid,
         day: viewing.watchedDate,
         seconds: minutes * 60,
         title: viewing.title,
-        subtitle: viewing.filmYear,
-        estimated: runtime === null,
+        subtitle: film.director ?? viewing.filmYear,
+        estimated: film.runtimeMin === null,
         meta: { tmdbId: viewing.tmdbId, rewatch: viewing.rewatch, rating: viewing.rating },
       });
     }
 
     upsertEntries('letterboxd', rows);
+
+    // Старые записи вне RSS тоже получают режиссёра — иначе в журнале останется год.
+    const stale = db
+      .prepare(
+        `SELECT external_id, day, seconds, title, subtitle, estimated, meta
+           FROM entries
+          WHERE source = 'letterboxd' AND day LIKE ?
+            AND (subtitle GLOB '[0-9][0-9][0-9][0-9]' OR subtitle IS NULL)`,
+      )
+      .all(`${year}-%`) as Array<{
+      external_id: string;
+      day: string;
+      seconds: number;
+      title: string;
+      subtitle: string | null;
+      estimated: number;
+      meta: string | null;
+    }>;
+
+    const backfill: EntryRow[] = [];
+    for (const row of stale) {
+      let tmdbId: number | null = null;
+      try {
+        tmdbId = row.meta ? ((JSON.parse(row.meta) as { tmdbId?: number | null }).tmdbId ?? null) : null;
+      } catch {
+        tmdbId = null;
+      }
+      if (!tmdbId) continue;
+      const film = await resolveFilm(tmdbId, row.title);
+      if (!film.director) continue;
+      backfill.push({
+        externalId: row.external_id,
+        day: row.day,
+        seconds: row.seconds,
+        title: row.title,
+        subtitle: film.director,
+        estimated: Boolean(row.estimated),
+        meta: row.meta ? (JSON.parse(row.meta) as Record<string, unknown>) : null,
+      });
+    }
+    if (backfill.length > 0) upsertEntries('letterboxd', backfill);
+
     rebuildDailyFromEntries('letterboxd', year);
 
     // Топ считаем по всей накопленной базе за год, а не только по свежей ленте.

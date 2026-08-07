@@ -93,6 +93,8 @@ docker compose up -d --build
 | `GET /api/summary?year=2026` | всё, что рисует сводку |
 | `GET /api/journal?year=2026&source=myshows` | лента активностей по дням, сверху свежее |
 | `GET /api/source?id=myshows&year=2026` | один источник: полный рейтинг и его лента |
+| `GET /api/export?year=2026&format=json` | скачать всё за год (сводка, журнал, топы) |
+| `GET /api/export?year=2026&format=csv` | скачать плоский журнал для Excel |
 | `POST /api/sync` | синхронизация вручную (идемпотентна: повторный вызов присоединяется к текущей) |
 | `GET /api/health` | статус и признак идущей синхронизации |
 

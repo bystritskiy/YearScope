@@ -93,6 +93,43 @@ body {
   cursor: default;
 }
 
+.export {
+  position: relative;
+}
+
+.export__menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  min-width: 180px;
+  background: var(--bg-raised);
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  z-index: 20;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+.export__menu[hidden] {
+  display: none;
+}
+
+.export__item {
+  color: var(--text);
+  text-decoration: none;
+  font-size: 13px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+
+.export__item:hover {
+  background: #1c2330;
+}
+
 /* --- вкладки и экраны --- */
 
 .tabs {

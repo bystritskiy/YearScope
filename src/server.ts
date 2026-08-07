@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { extname, join, normalize } from 'node:path';
 import { SOURCE_ORDER, config, type SourceId } from './config.ts';
 import { getJournal } from './db.ts';
+import { buildExport, buildJournalCsv } from './export.ts';
 import { buildSourceDetail, buildSummary } from './summary.ts';
 import { isSyncRunning, logReports, runSync, startScheduler } from './sync.ts';
 
@@ -23,6 +24,20 @@ function sendJson(response: import('node:http').ServerResponse, status: number, 
     'cache-control': 'no-store',
   });
   response.end(payload);
+}
+
+function sendDownload(
+  response: import('node:http').ServerResponse,
+  filename: string,
+  contentType: string,
+  body: string,
+): void {
+  response.writeHead(200, {
+    'content-type': contentType,
+    'content-disposition': `attachment; filename="${filename}"`,
+    'cache-control': 'no-store',
+  });
+  response.end(body);
 }
 
 async function serveStatic(
@@ -106,6 +121,35 @@ const server = createServer((request, response) => {
       return;
     }
     sendJson(response, 200, detail);
+    return;
+  }
+
+  if (url.pathname === '/api/export') {
+    const year = parseYear(url);
+    if (year === null) {
+      sendJson(response, 400, { error: 'год указан неверно' });
+      return;
+    }
+    const format = url.searchParams.get('format') ?? 'json';
+    if (format === 'csv') {
+      sendDownload(
+        response,
+        `yearscope-${year}-journal.csv`,
+        'text/csv; charset=utf-8',
+        buildJournalCsv(year),
+      );
+      return;
+    }
+    if (format === 'json') {
+      sendDownload(
+        response,
+        `yearscope-${year}.json`,
+        'application/json; charset=utf-8',
+        `${JSON.stringify(buildExport(year), null, 2)}\n`,
+      );
+      return;
+    }
+    sendJson(response, 400, { error: 'format: json или csv' });
     return;
   }
 
