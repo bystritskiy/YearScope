@@ -266,16 +266,42 @@ function renderGaps(data) {
 
 /* --- лента --- */
 
+/** Заголовок события: действие + имя; в подзаголовке — контекст (сериал, площадка, год). */
+function eventCopy(item) {
+  if (item.kind === 'day') {
+    return { title: `${metaOf(item.source).label} — за день`, subtitle: item.subtitle };
+  }
+
+  switch (item.source) {
+    case 'myshows':
+      // title — серия, subtitle — название сериала
+      return {
+        title: item.title ? `Смотрел серию «${item.title}»` : 'Смотрел серию',
+        subtitle: item.subtitle,
+      };
+    case 'gowithme':
+      return { title: `Играл в «${item.title}»`, subtitle: item.subtitle };
+    case 'letterboxd':
+      return { title: `Смотрел фильм «${item.title}»`, subtitle: item.subtitle };
+    case 'koshelf':
+      return { title: `Читал «${item.title}»`, subtitle: item.subtitle };
+    case 'intervals':
+      return { title: item.title, subtitle: item.subtitle };
+    default:
+      return { title: item.title, subtitle: item.subtitle };
+  }
+}
+
 function renderEvent(item) {
   const meta = metaOf(item.source);
+  const copy = eventCopy(item);
   const row = node('div', `event${item.kind === 'day' ? ' event--day' : ''}`);
 
   row.append(node('span', 'event__icon', meta.icon));
 
   const body = node('div', 'event__body');
-  // Дневной итог без разбивки подписываем источником, иначе «за день» ни о чём.
-  body.append(node('div', 'event__title', item.kind === 'day' ? `${meta.label} — за день` : item.title));
-  if (item.subtitle) body.append(node('div', 'event__sub', item.subtitle));
+  body.append(node('div', 'event__title', copy.title));
+  if (copy.subtitle) body.append(node('div', 'event__sub', copy.subtitle));
   row.append(body);
 
   const time = node('span', 'event__time', formatExact(item.seconds));
