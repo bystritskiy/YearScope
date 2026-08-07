@@ -1,12 +1,21 @@
 import { config } from '../config.ts';
 import { fetchJson } from '../http.ts';
-import { replaceDaily, replaceHighlights } from '../db.ts';
+import { replaceDaily, replaceEntries, replaceHighlights, type EntryRow } from '../db.ts';
 import type { Source, SyncResult } from './types.ts';
 
 type PlayerResponse = {
   trackedSince?: string | null;
   totals?: { total_seconds?: number; sessions?: number; games?: number };
   byDay?: Array<{ day: string; total_seconds: number; sessions: number }>;
+  byDayGames?: Array<{
+    day: string;
+    title_id: string;
+    title_name: string;
+    source?: string;
+    total_seconds: number;
+    sessions: number;
+    iconUrl?: string | null;
+  }>;
   topGames?: Array<{
     title_name: string;
     total_seconds: number;
@@ -26,19 +35,26 @@ const PLATFORM_LABELS: Record<string, string> = {
   psvita: 'PS Vita',
 };
 
+const platformLabel = (source?: string): string | null =>
+  source ? (PLATFORM_LABELS[source] ?? source) : null;
+
 export const gowithme: Source = {
   id: 'gowithme',
   enabled: config.sources.gowithme.enabled,
 
   async sync(year: number): Promise<SyncResult> {
     const { baseUrl, player } = config.sources.gowithme;
-    const url = `${baseUrl}/api/player?name=${encodeURIComponent(player)}&period=year`;
+    // byDayGames — opt-in агрегат day × title; без include профиль не раздувается.
+    const url =
+      `${baseUrl}/api/player?name=${encodeURIComponent(player)}` +
+      `&period=year&include=byDayGames`;
     const data = await fetchJson<PlayerResponse>(url);
 
     // period=year привязан к текущему году, поэтому фильтруем сами:
     // так сводка за прошлый год не наберёт лишнего из свежих данных.
     const prefix = `${year}-`;
     const days = (data.byDay ?? []).filter((row) => row.day.startsWith(prefix));
+    const dayGames = (data.byDayGames ?? []).filter((row) => row.day.startsWith(prefix));
 
     replaceDaily(
       'gowithme',
@@ -46,12 +62,27 @@ export const gowithme: Source = {
       days.map((row) => ({ day: row.day, seconds: row.total_seconds, items: row.sessions })),
     );
 
+    // Одна строка журнала на игру в день — не сырые сессии и не «за день» целиком.
+    const entries: EntryRow[] = dayGames.map((game) => ({
+      externalId: `${game.day}|${game.title_id}`,
+      day: game.day,
+      seconds: game.total_seconds,
+      title: game.title_name,
+      subtitle: platformLabel(game.source),
+      meta: {
+        titleId: game.title_id,
+        sessions: game.sessions,
+        iconUrl: game.iconUrl ? `${baseUrl}${game.iconUrl}` : null,
+      },
+    }));
+    replaceEntries('gowithme', year, entries);
+
     replaceHighlights(
       'gowithme',
       year,
       (data.topGames ?? []).slice(0, 100).map((game) => ({
         title: game.title_name,
-        subtitle: game.source ? (PLATFORM_LABELS[game.source] ?? game.source) : null,
+        subtitle: platformLabel(game.source),
         seconds: game.total_seconds,
         iconUrl: game.iconUrl ? `${baseUrl}${game.iconUrl}` : null,
       })),
@@ -63,7 +94,7 @@ export const gowithme: Source = {
     return {
       coversFrom: trackedSince,
       granularity: 'day',
-      summary: `${days.length} дней, ${Math.round(seconds / 3600)} ч, игр: ${data.totals?.games ?? 0}`,
+      summary: `${days.length} дней, ${Math.round(seconds / 3600)} ч, игр в журнале: ${entries.length}`,
     };
   },
 };

@@ -208,6 +208,39 @@ export function upsertEntries(source: SourceId, rows: EntryRow[]): number {
   return rows.length;
 }
 
+/**
+ * Полная замена записей за год: для источников вроде gowithme, которые
+ * пересчитывают прошлое — иначе устаревшие day×title останутся в журнале.
+ */
+export function replaceEntries(source: SourceId, year: number, rows: EntryRow[]): void {
+  const { from, to } = yearRange(year);
+  const del = db.prepare('DELETE FROM entries WHERE source = ? AND day BETWEEN ? AND ?');
+  const ins = db.prepare(`
+    INSERT INTO entries (source, external_id, day, seconds, title, subtitle, estimated, meta)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+  `);
+  db.exec('BEGIN');
+  try {
+    del.run(source, from, to);
+    for (const row of rows) {
+      ins.run(
+        source,
+        row.externalId,
+        row.day,
+        Math.round(row.seconds),
+        row.title,
+        row.subtitle ?? null,
+        row.estimated ? 1 : 0,
+        row.meta ? JSON.stringify(row.meta) : null,
+      );
+    }
+    db.exec('COMMIT');
+  } catch (error) {
+    db.exec('ROLLBACK');
+    throw error;
+  }
+}
+
 /** Пересобирает daily из накопленных entries — для источников, живущих на записях. */
 export function rebuildDailyFromEntries(source: SourceId, year: number): void {
   const { from, to } = yearRange(year);
@@ -407,10 +440,9 @@ function pluralSessions(count: number): string {
 /**
  * Лента активностей по дням, сверху свежее.
  *
- * У источников разная детализация: фильмы, серии, книги и тренировки лежат
- * поштучно, а gowithme не отдаёт разбивку по играм за день в разрезе игрока —
- * только суммарное время. Поэтому такие источники попадают в ленту одной
- * дневной строкой, а не выдумываются задним числом.
+ * У источников разная детализация: фильмы, серии, книги, игры и тренировки
+ * лежат поштучно в entries. Источники без записей попадают в ленту одной
+ * дневной строкой из daily — чтобы не выдумывать разбивку задним числом.
  */
 export function getJournal(year: number, source?: SourceId): JournalDay[] {
   const { from, to } = yearRange(year);
