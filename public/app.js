@@ -26,9 +26,8 @@ const el = {
   sourceRanking: document.getElementById('source-ranking'),
   sourceFeed: document.getElementById('source-feed'),
   rankingTitle: document.getElementById('ranking-title'),
-  footerSources: document.getElementById('footer-sources'),
   footerTotal: document.getElementById('footer-total'),
-  footerStamp: document.getElementById('footer-stamp'),
+  footerVersion: document.getElementById('footer-version'),
   footerSync: document.getElementById('footer-sync'),
   toTop: document.getElementById('to-top'),
   views: {
@@ -565,31 +564,7 @@ function renderFooter(data) {
     data.totalSeconds > 0
       ? `${formatExact(data.totalSeconds)} за ${data.year} год`
       : 'данных пока нет';
-  el.footerStamp.textContent = `обновлено ${formatDate(data.generatedAt) ?? ''}`;
-  el.footerSources.replaceChildren(
-    ...data.sources.map((source) => {
-      const row = document.createElement('li');
-      const dot = node(
-        'span',
-        `dot${source.status === 'error' ? ' dot--error' : !source.configured ? ' dot--off' : ''}`,
-      );
-      dot.setAttribute('aria-hidden', 'true');
-      const label = node('span');
-      const footerIcon = node('span', null, `${source.icon} `);
-      footerIcon.setAttribute('aria-hidden', 'true');
-      label.append(
-        footerIcon,
-        document.createTextNode(
-          source.seconds > 0
-            ? `${source.label} — ${formatExact(source.seconds)}`
-            : `${source.label} — нет данных`,
-        ),
-      );
-      row.append(dot, label);
-      row.title = source.message ?? source.label;
-      return row;
-    }),
-  );
+  if (el.footerVersion && data.version) el.footerVersion.textContent = `v${data.version}`;
 }
 
 /* --- загрузка --- */

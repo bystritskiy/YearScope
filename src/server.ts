@@ -164,7 +164,7 @@ const server = createServer((request, response) => {
   }
 
   if (url.pathname === '/api/health') {
-    sendJson(response, 200, { ok: true, year: config.year, syncing: isSyncRunning() });
+    sendJson(response, 200, { ok: true, year: config.year, version: config.version, syncing: isSyncRunning() });
     return;
   }
 

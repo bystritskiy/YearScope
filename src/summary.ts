@@ -32,6 +32,8 @@ export type SourceSummary = {
 
 export type Summary = {
   year: number;
+  /** Версия продукта из package.json — клиент показывает её в футере. */
+  version: string;
   generatedAt: string;
   totalSeconds: number;
   sources: SourceSummary[];
@@ -87,6 +89,7 @@ export function buildSummary(year = config.year): Summary {
 
   return {
     year,
+    version: config.version,
     generatedAt: new Date().toISOString(),
     totalSeconds,
     sources,

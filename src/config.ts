@@ -1,4 +1,6 @@
-import { join } from 'node:path';
+import { readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 /**
  * Всё настраивается через переменные окружения, но значения по умолчанию
@@ -15,7 +17,19 @@ function envInt(name: string, fallback: number): number {
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
+/** Версия продукта — единый источник: package.json. Показывается в футере. */
+function appVersion(): string {
+  try {
+    const root = dirname(dirname(fileURLToPath(import.meta.url)));
+    const pkg = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')) as { version?: unknown };
+    return typeof pkg.version === 'string' && pkg.version !== '' ? pkg.version : '0.0.0';
+  } catch {
+    return '0.0.0';
+  }
+}
+
 export const config = {
+  version: appVersion(),
   port: envInt('PORT', 3010),
   dataDir: env('DATA_DIR', join(process.cwd(), 'data')),
 

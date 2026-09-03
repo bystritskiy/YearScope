@@ -1,6 +1,6 @@
 {
   "name": "yearscope",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
   "type": "module",
   "description": "Личный дашборд: сколько времени за год ушло в игры, сериалы, кино, книги и тренировки",

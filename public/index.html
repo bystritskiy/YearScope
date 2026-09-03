@@ -104,16 +104,12 @@
     <footer class="footer">
       <div class="footer__inner">
         <div class="footer__col">
-          <div class="footer__brand"><img src="/logo-mark.svg" width="18" height="18" alt="" aria-hidden="true" /> YearScope</div>
+          <div class="footer__brand"><img src="/logo-mark.svg" width="18" height="18" alt="" aria-hidden="true" /> YearScope <span class="footer__version" id="footer-version"></span></div>
           <p class="footer__text">
             Личный дашборд времени: игры, сериалы, кино, книги и тренировки — всё за год на одном экране.
           </p>
           <p class="footer__total" id="footer-total"></p>
         </div>
-        <nav class="footer__col" aria-label="Источники данных">
-          <h3 class="footer__title">Источники</h3>
-          <ul class="footer__list" id="footer-sources"></ul>
-        </nav>
         <div class="footer__col">
           <h3 class="footer__title">Данные</h3>
           <a class="footer__link" data-export="json" href="/api/export?format=json">Скачать JSON — всё за год</a>
@@ -122,10 +118,6 @@
             Обновить данные
           </button>
         </div>
-      </div>
-      <div class="footer__bottom">
-        <span id="footer-stamp"></span>
-        <a class="footer__top" href="#top">Наверх ↑</a>
       </div>
     </footer>
 
