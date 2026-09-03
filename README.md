@@ -1,6 +1,11 @@
-# YearScope
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="public/logo.svg" />
+    <img src="public/logo-light.svg" width="240" alt="YearScope" />
+  </picture>
+</p>
 
-Локальный дашборд: сколько времени за год ушло на игры, сериалы, кино, книги и тренировки — на одном экране и в сумме.
+<p align="center">Локальный дашборд: сколько времени за год ушло на игры, сериалы, кино, книги и тренировки — на одном экране и в сумме.</p>
 
 ## Запуск
 

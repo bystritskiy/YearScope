@@ -8,8 +8,8 @@
     "node": ">=24"
   },
   "scripts": {
-    "start": "node src/server.ts",
-    "dev": "node --watch src/server.ts",
-    "sync": "node src/cli-sync.ts"
+    "start": "node --env-file=.env src/server.ts",
+    "dev": "node --watch --env-file=.env src/server.ts",
+    "sync": "node --env-file=.env src/cli-sync.ts"
   }
 }

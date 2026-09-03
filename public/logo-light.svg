@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 40" fill="none">
+  <g transform="translate(2 4)">
+    <g transform="rotate(-90 16 16)">
+      <circle cx="16" cy="16" r="11" stroke="#7c5cff" stroke-width="5" stroke-linecap="butt" stroke-dasharray="11.62 57.5" stroke-dashoffset="0"/>
+      <circle cx="16" cy="16" r="11" stroke="#31b0d5" stroke-width="5" stroke-linecap="butt" stroke-dasharray="11.62 57.5" stroke-dashoffset="-13.82"/>
+      <circle cx="16" cy="16" r="11" stroke="#40bf6a" stroke-width="5" stroke-linecap="butt" stroke-dasharray="11.62 57.5" stroke-dashoffset="-27.65"/>
+      <circle cx="16" cy="16" r="11" stroke="#e0913a" stroke-width="5" stroke-linecap="butt" stroke-dasharray="11.62 57.5" stroke-dashoffset="-41.47"/>
+      <circle cx="16" cy="16" r="11" stroke="#e05a8a" stroke-width="5" stroke-linecap="butt" stroke-dasharray="11.62 57.5" stroke-dashoffset="-55.29"/>
+    </g>
+    <circle cx="16" cy="16" r="3.2" fill="#161b26"/>
+  </g>
+  <text x="42" y="26" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="20" font-weight="700" letter-spacing="-0.02em" fill="#161b26">YearScope</text>
+</svg>
