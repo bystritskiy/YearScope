@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { extname, join, normalize } from 'node:path';
 import { SOURCE_ORDER, config, type SourceId } from './config.ts';
 import { getJournal } from './db.ts';
+import { seedDemo } from './demo.ts';
 import { buildExport, buildJournalCsv } from './export.ts';
 import { buildSourceDetail, buildSummary } from './summary.ts';
 import { isSyncRunning, logReports, runSync, startScheduler } from './sync.ts';
@@ -154,6 +155,14 @@ const server = createServer((request, response) => {
   }
 
   if (url.pathname === '/api/sync' && request.method === 'POST') {
+    // В демо «Обновить» перегенерирует вымышленный год, а не ходит в сеть:
+    // ключей всё равно нет, и кнопка иначе просто рисовала бы ошибки.
+    if (config.demo) {
+      seedDemo(config.year);
+      sendJson(response, 202, { started: true, alreadyRunning: false, demo: true });
+      return;
+    }
+
     const already = isSyncRunning();
     runSync().then(
       (reports) => logReports(already ? 'присоединился к текущей' : 'по запросу', reports),
@@ -164,7 +173,13 @@ const server = createServer((request, response) => {
   }
 
   if (url.pathname === '/api/health') {
-    sendJson(response, 200, { ok: true, year: config.year, version: config.version, syncing: isSyncRunning() });
+    sendJson(response, 200, {
+      ok: true,
+      year: config.year,
+      version: config.version,
+      demo: config.demo,
+      syncing: isSyncRunning(),
+    });
     return;
   }
 
@@ -178,6 +193,13 @@ const server = createServer((request, response) => {
 
 server.listen(config.port, () => {
   console.log(`[yearscope] http://localhost:${config.port} — сводка за ${config.year} год`);
+
+  // Демо живёт само по себе: ни синхронизации на старте, ни планировщика.
+  if (config.demo) {
+    seedDemo(config.year);
+    console.log('[yearscope] демо-режим: вымышленный год, источники не опрашиваются');
+    return;
+  }
 
   if (config.syncOnBoot) {
     runSync().then(

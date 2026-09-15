@@ -4,18 +4,16 @@ services:
     container_name: yearscope
     restart: unless-stopped
     ports:
-      # Снаружи 3011: на NAS порт 3010 уже занят dawarich_app.
       # Внутри контейнера сервис всегда слушает 3010.
-      - "${YEARSCOPE_PORT:-3011}:3010"
+      # Наружный порт меняется переменной YEARSCOPE_PORT.
+      - "${YEARSCOPE_PORT:-3010}:3010"
     environment:
       # Часовой пояс должен совпадать с KoShelf, иначе чтение будет
       # раскладываться по соседним дням и месячные суммы разъедутся.
-      TZ: Europe/Warsaw
-      KOSHELF_BASE_URL: http://NAS_HOST:3003
-      GOWITHME_PLAYER: your-nick
-      LETTERBOXD_USER: your-nick
-      SYNC_INTERVAL_MINUTES: "1440"
+      TZ: ${TZ:-Europe/Warsaw}
+      SYNC_INTERVAL_MINUTES: ${SYNC_INTERVAL_MINUTES:-1440}
     env_file:
+      # Ники, ключи и адрес KoShelf — там. См. .env.example.
       - .env
     volumes:
       # База и импорты переживают пересоздание контейнера.

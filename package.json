@@ -3,13 +3,15 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "Личный дашборд: сколько времени за год ушло в игры, сериалы, кино, книги и тренировки",
+  "description": "Дашборд: сколько времени за год ушло на игры, сериалы, кино, книги и тренировки",
   "engines": {
     "node": ">=24"
   },
   "scripts": {
-    "start": "node --env-file=.env src/server.ts",
-    "dev": "node --watch --env-file=.env src/server.ts",
-    "sync": "node --env-file=.env src/cli-sync.ts"
-  }
+    "start": "node --env-file-if-exists=.env src/server.ts",
+    "demo": "node src/server.ts --demo",
+    "dev": "node --watch --env-file-if-exists=.env src/server.ts",
+    "sync": "node --env-file-if-exists=.env src/cli-sync.ts"
+  },
+  "license": "MIT"
 }

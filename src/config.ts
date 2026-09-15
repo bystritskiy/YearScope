@@ -3,8 +3,9 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 /**
- * Всё настраивается через переменные окружения, но значения по умолчанию
- * рассчитаны на домашний сетап Богдана — сервис должен подниматься без .env.
+ * Всё настраивается через переменные окружения. Значений по умолчанию хватает,
+ * чтобы сервис поднялся без .env — но источники тогда либо выключены,
+ * либо ходят в пустоту: свои ники и адреса нужно указать явно.
  */
 
 function env(name: string, fallback: string): string {
@@ -28,10 +29,34 @@ function appVersion(): string {
   }
 }
 
+/**
+ * Демо-режим: база заполняется вымышленным годом, сеть не трогается вовсе.
+ * Нужен для скриншотов и для того, чтобы проект можно было запустить и
+ * посмотреть, не заводя аккаунты в пяти сервисах.
+ */
+const demo = process.argv.includes('--demo') || env('YEARSCOPE_DEMO', 'false') === 'true';
+
+/** Демо-данные живут отдельно, чтобы не затереть настоящую базу. */
+const dataDir = env('DATA_DIR', join(process.cwd(), demo ? 'data/demo' : 'data'));
+
+/**
+ * Источник включён, только если выключатель не сняли И известно, откуда брать
+ * данные. Иначе пустой ник молча превратился бы в запрос в никуда и красную
+ * ошибку на экране — лучше честно показать «не настроен».
+ */
+const on = (flag: string, ...required: string[]): boolean =>
+  env(flag, 'true') !== 'false' && required.every((value) => value !== '');
+
+const gowithmePlayer = env('GOWITHME_PLAYER', '');
+const koshelfBaseUrl = env('KOSHELF_BASE_URL', '');
+const myshowsLogin = env('MYSHOWS_LOGIN', '');
+const letterboxdUser = env('LETTERBOXD_USER', '');
+
 export const config = {
   version: appVersion(),
+  demo,
   port: envInt('PORT', 3010),
-  dataDir: env('DATA_DIR', join(process.cwd(), 'data')),
+  dataDir,
 
   /** Год, за который считаем сводку. */
   year: envInt('YEARSCOPE_YEAR', new Date().getUTCFullYear()),
@@ -48,23 +73,23 @@ export const config = {
 
   sources: {
     gowithme: {
-      enabled: env('GOWITHME_ENABLED', 'true') !== 'false',
+      enabled: on('GOWITHME_ENABLED', gowithmePlayer),
       baseUrl: env('GOWITHME_BASE_URL', 'https://gowithme.club'),
-      player: env('GOWITHME_PLAYER', 'your-nick'),
+      player: gowithmePlayer,
     },
     koshelf: {
-      enabled: env('KOSHELF_ENABLED', 'true') !== 'false',
-      baseUrl: env('KOSHELF_BASE_URL', 'http://NAS_HOST:3003'),
+      enabled: on('KOSHELF_ENABLED', koshelfBaseUrl),
+      baseUrl: koshelfBaseUrl,
     },
     myshows: {
-      enabled: env('MYSHOWS_ENABLED', 'true') !== 'false',
+      enabled: on('MYSHOWS_ENABLED', myshowsLogin),
       apiUrl: env('MYSHOWS_API_URL', 'https://api.myshows.me/v2/rpc/'),
-      login: env('MYSHOWS_LOGIN', 'your-nick'),
+      login: myshowsLogin,
       /**
        * История берётся из выгрузки профиля (лежит в data/imports),
        * потому что публичный API отдаёт лишь 25 последних отметок.
        */
-      importDir: env('MYSHOWS_IMPORT_DIR', join(env('DATA_DIR', join(process.cwd(), 'data')), 'imports')),
+      importDir: env('MYSHOWS_IMPORT_DIR', join(dataDir, 'imports')),
       fallbackEpisodeMinutes: envInt('MYSHOWS_FALLBACK_EPISODE_MINUTES', 45),
     },
     intervals: {
@@ -79,9 +104,9 @@ export const config = {
       athleteId: env('INTERVALS_ATHLETE_ID', '0'),
     },
     letterboxd: {
-      enabled: env('LETTERBOXD_ENABLED', 'true') !== 'false',
+      enabled: on('LETTERBOXD_ENABLED', letterboxdUser),
       baseUrl: env('LETTERBOXD_BASE_URL', 'https://letterboxd.com'),
-      user: env('LETTERBOXD_USER', 'your-nick'),
+      user: letterboxdUser,
       /**
        * Ключ TMDB опционален. Без него хронометраж фильмов берётся как средняя
        * величина и помечается в интерфейсе как оценка.
