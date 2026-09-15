@@ -1,10 +1,9 @@
-<h3 align="center">
+<p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="public/logo.svg" />
-    <img src="public/logo-light.svg" width="150" align="middle" alt="YearScope" />
+    <img src="public/logo-light.svg" width="200" alt="YearScope" />
   </picture>
-  — куда ушёл твой год
-</h3>
+</p>
 
 <p align="center">
   Игры, сериалы, кино, книги и тренировки — на одном экране и в сумме часов.
