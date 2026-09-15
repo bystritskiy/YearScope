@@ -834,39 +834,6 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
-/* --- оговорки о данных --- */
-
-.gaps {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.gaps li {
-  display: flex;
-  gap: 10px;
-  font-size: 13px;
-  color: var(--text-dim);
-  line-height: 1.45;
-}
-
-.gaps b {
-  color: var(--text);
-  font-weight: 550;
-}
-
-.gaps__mark {
-  flex-shrink: 0;
-  color: var(--warn);
-}
-
-.gaps__mark--error {
-  color: var(--error);
-}
-
 @media (max-width: 620px) {
   .shell {
     padding: 20px 16px 48px;

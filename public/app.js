@@ -17,8 +17,6 @@ const el = {
   chartPanel: document.getElementById('chart-panel'),
   chart: document.getElementById('chart'),
   chartLegend: document.getElementById('chart-legend'),
-  gapsPanel: document.getElementById('gaps-panel'),
-  gaps: document.getElementById('gaps'),
   journalFilters: document.getElementById('journal-filters'),
   journalFeed: document.getElementById('journal-feed'),
   sourceBack: document.getElementById('source-back'),
@@ -253,6 +251,14 @@ function renderCard(source, index = 0) {
     card.append(list);
   }
 
+  // Честность про данные важнее красивой цифры: если источник знает только
+  // половину года, это написано прямо на карточке, а не подразумевается.
+  const caveat =
+    source.coversFrom && source.coversFrom > `${summaryData?.year ?? source.coversFrom.slice(0, 4)}-01-02`
+      ? `только с ${formatDay(source.coversFrom)}`
+      : source.warning;
+  if (caveat) card.append(node('div', 'card__note', caveat));
+
   // Постоянный affordance: кликабельность видна без ховера и тултипа.
   if (source.seconds > 0) card.append(node('div', 'card__more', 'Открыть всё за год →'));
 
@@ -310,51 +316,6 @@ function renderChart(data) {
           : `${MONTH_LABELS[index]}: нет данных`,
       );
       return column;
-    }),
-  );
-}
-
-/**
- * Честность про данные важнее красивой цифры: если источник знает только
- * половину года, это должно быть написано рядом с итогом, а не подразумеваться.
- */
-function renderGaps(data) {
-  const notes = [];
-
-  for (const source of data.sources) {
-    if (!source.configured) {
-      notes.push({ level: 'warn', label: source.label, text: 'источник ещё не подключён — время не учтено в сумме' });
-      continue;
-    }
-    if (source.status === 'error') {
-      notes.push({ level: 'error', label: source.label, text: `последняя синхронизация не удалась: ${source.message ?? '—'}` });
-      continue;
-    }
-    if (source.status === 'never') {
-      notes.push({ level: 'warn', label: source.label, text: 'ещё ни разу не синхронизировался' });
-      continue;
-    }
-    if (source.coversFrom && source.coversFrom > `${data.year}-01-02`) {
-      notes.push({
-        level: 'warn',
-        label: source.label,
-        text: `данные есть только с ${formatDay(source.coversFrom)} — раньше источник не вёл учёт`,
-      });
-    }
-    if (source.warning) {
-      notes.push({ level: 'warn', label: source.label, text: source.warning });
-    }
-  }
-
-  el.gapsPanel.hidden = notes.length === 0;
-  el.gaps.replaceChildren(
-    ...notes.map((note) => {
-      const row = document.createElement('li');
-      row.append(node('span', `gaps__mark${note.level === 'error' ? ' gaps__mark--error' : ''}`, '●'));
-      const body = document.createElement('span');
-      body.append(node('b', null, note.label), document.createTextNode(` — ${note.text}`));
-      row.append(body);
-      return row;
     }),
   );
 }
@@ -589,7 +550,6 @@ async function load() {
   renderTotal(summaryData);
   el.cards.replaceChildren(...summaryData.sources.map((source, index) => renderCard(source, index)));
   renderChart(summaryData);
-  renderGaps(summaryData);
   renderJournalFilters();
   renderSourceNav();
   renderFooter(summaryData);
