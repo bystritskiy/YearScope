@@ -61,4 +61,4 @@ docker compose up -d --build
 
 ## Лицензия
 
-[MIT](LICENSE) — бери, форкай, меняй.
+[MIT](LICENSE)
