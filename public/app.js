@@ -35,20 +35,20 @@ const el = {
   },
 };
 
-/** Последняя загруженная сводка — из неё берутся иконки и цвета для ленты. */
+/** Последняя загруженная сводка: из неё берутся иконки и цвета для ленты. */
 let summaryData = null;
 let journalFilter = null;
-/** Текущий экран — чтобы роутер по хешу не дёргал fetch по кругу. */
+/** Текущий экран, чтобы роутер по хешу не дёргал fetch по кругу. */
 let currentView = 'summary';
 let currentSource = null;
-/** Базовый заголовок вкладки («YearScope 2026 — 692 ч»), экраны его дополняют. */
+/** Базовый заголовок вкладки («YearScope 2026: 692 ч»), экраны его дополняют. */
 let baseTitle = 'YearScope';
 
 const hours = (seconds) => seconds / 3600;
 
-/** «1 час», «2 часа», «5 часов» — иначе цифры читаются как машинный вывод. */
+/** «1 час», «2 часа», «5 часов»: иначе цифры читаются как машинный вывод. */
 function pluralHours(value) {
-  // Дробные («1,4 часа») — всегда родительный единственного; целые — по классическому правилу.
+  // Дробные («1,4 часа») всегда идут в родительном единственного, целые по классическому правилу.
   if (!Number.isInteger(Math.round(value * 10) / 10)) return 'часа';
   const rounded = Math.round(value);
   const mod10 = rounded % 10;
@@ -156,7 +156,7 @@ function route() {
   } else if (hash === '#/summary' || hash === '') {
     if (currentView !== 'summary') showView('summary');
   }
-  // Остальное (например, #top у кнопки «Наверх») — обычные якоря, не экраны.
+  // Остальное (например, #top у кнопки «Наверх») это обычные якоря, не экраны.
 }
 
 window.addEventListener('hashchange', route);
@@ -174,7 +174,7 @@ function renderTotal(data) {
   const days = (data.totalSeconds / 86400).toFixed(1);
   el.totalMeta.textContent =
     active.length > 0
-      ? `${formatExact(data.totalSeconds)} — это ${days} суток непрерывно, по ${active.length} активностям`
+      ? `${formatExact(data.totalSeconds)}, это ${days} суток непрерывно, по ${active.length} активностям`
       : 'данных пока нет';
 
   el.totalBar.replaceChildren(
@@ -196,7 +196,7 @@ function renderTotal(data) {
 function renderCard(source, index = 0) {
   const card = node('article', 'card');
   card.style.setProperty('--accent', source.accent);
-  // Каскад появления — единственный авторский момент движения: список собирается сверху вниз.
+  // Каскад появления это единственный авторский момент движения: список собирается сверху вниз.
   card.style.animationDelay = `${Math.min(index * 60, 300)}ms`;
   if (source.seconds === 0) card.classList.add('card--empty');
 
@@ -234,7 +234,7 @@ function renderCard(source, index = 0) {
   }
 
   if (source.status === 'error') {
-    card.append(node('div', 'card__note card__note--error', `ошибка: ${source.message ?? '—'}`));
+    card.append(node('div', 'card__note card__note--error', `ошибка: ${source.message ?? 'без описания'}`));
     return card;
   }
 
@@ -245,7 +245,7 @@ function renderCard(source, index = 0) {
     for (const item of source.highlights.slice(0, 4)) {
       const row = document.createElement('li');
       row.append(node('span', null, item.title), node('span', null, formatExact(item.seconds)));
-      row.title = item.subtitle ? `${item.title} — ${item.subtitle}` : item.title;
+      row.title = item.subtitle ? `${item.title}, ${item.subtitle}` : item.title;
       list.append(row);
     }
     card.append(list);
@@ -290,7 +290,7 @@ function renderChart(data) {
       column.append(node('div', 'col__value', month.total > 0 ? formatHours(month.total) : ''));
 
       const stack = node('div', 'col__stack');
-      // Высота столбца — доля от самого нагруженного месяца; 150px под самый высокий.
+      // Высота столбца это доля от самого нагруженного месяца; 150px под самый высокий.
       stack.style.height = `${Math.max((month.total / max) * 150, month.total > 0 ? 3 : 4)}px`;
 
       for (const [sourceId, seconds] of Object.entries(month.bySource)) {
@@ -312,7 +312,7 @@ function renderChart(data) {
       column.setAttribute(
         'aria-label',
         month.total > 0
-          ? `${MONTH_LABELS[index]}: ${formatExact(month.total)} — ${parts.join(', ')}`
+          ? `${MONTH_LABELS[index]}: ${formatExact(month.total)}, из них ${parts.join(', ')}`
           : `${MONTH_LABELS[index]}: нет данных`,
       );
       return column;
@@ -322,15 +322,15 @@ function renderChart(data) {
 
 /* --- лента --- */
 
-/** Заголовок события: действие + имя; в подзаголовке — контекст (сериал, площадка, год). */
+/** Заголовок события: действие + имя; в подзаголовке контекст (сериал, площадка, год). */
 function eventCopy(item) {
   if (item.kind === 'day') {
-    return { title: `${metaOf(item.source).label} — за день`, subtitle: item.subtitle };
+    return { title: `${metaOf(item.source).label} за день`, subtitle: item.subtitle };
   }
 
   switch (item.source) {
     case 'myshows':
-      // title — серия, subtitle — название сериала
+      // title это серия, subtitle это название сериала
       return {
         title: item.title ? `Смотрел серию «${item.title}»` : 'Смотрел серию',
         subtitle: item.subtitle ? `Сериал ${item.subtitle}` : null,
@@ -439,7 +439,7 @@ async function loadJournal() {
 /* --- экран одного источника --- */
 
 async function openSource(id) {
-  // Состояние — сразу, до fetch: иначе обработчик hashchange устроит повторный заход.
+  // Состояние ставим сразу, до fetch: иначе обработчик hashchange устроит повторный заход.
   currentView = 'source';
   currentSource = id;
   updateTabs();
@@ -474,7 +474,7 @@ async function openSource(id) {
   );
 
   const max = detail.ranking[0]?.seconds ?? 1;
-  el.rankingTitle.textContent = `Всё за год — ${detail.ranking.length}`;
+  el.rankingTitle.textContent = `Всё за год: ${detail.ranking.length}`;
   el.sourceRanking.replaceChildren(
     ...detail.ranking.map((item) => {
       const row = document.createElement('li');
@@ -493,7 +493,7 @@ async function openSource(id) {
 
   renderFeed(el.sourceFeed, detail.journal);
   el.pageTitle.textContent = `${source.icon} ${source.label}`;
-  document.title = `${baseTitle} — ${source.label}`;
+  document.title = `${baseTitle}: ${source.label}`;
   showView('source', source.id);
 }
 
@@ -543,7 +543,7 @@ async function load() {
     link.href = `/api/export?year=${year}&format=csv`;
   }
 
-  baseTitle = `YearScope ${year} — ${formatHours(summaryData.totalSeconds)} ч`;
+  baseTitle = `YearScope ${year}: ${formatHours(summaryData.totalSeconds)} ч`;
   document.title = baseTitle;
   el.subtitle.textContent = `сколько времени ушло на активности в ${year} году`;
 
@@ -584,7 +584,7 @@ el.tabs.addEventListener('click', (event) => {
 });
 
 el.sourceBack.addEventListener('click', () => {
-  // Возврат по истории бережёт контекст (фильтр журнала, скролл); прямой заход — ведёт на сводку.
+  // Возврат по истории бережёт контекст (фильтр журнала, скролл); прямой заход ведёт на сводку.
   if (window.history.length > 1) window.history.back();
   else showView('summary');
 });
@@ -596,7 +596,7 @@ async function doSync(button) {
   try {
     await fetch('/api/sync', { method: 'POST' });
     // Синхронизация асинхронная: ждём, пока сервер отметит её завершённой.
-    // Счётчик секунд в кнопке — честный признак жизни вместо чёрного ящика.
+    // Счётчик секунд в кнопке это честный признак жизни вместо чёрного ящика.
     const started = Date.now();
     for (let attempt = 0; attempt < 40; attempt += 1) {
       await new Promise((resolve) => setTimeout(resolve, 1000));
@@ -620,7 +620,7 @@ el.footerSync.addEventListener('click', () => doSync(el.footerSync));
 
 const pagehead = document.getElementById('pagehead');
 if (pagehead && 'IntersectionObserver' in window) {
-  // Кнопка видна, пока заголовок страницы вне вьюпорта — без обработчика на каждый кадр скролла.
+  // Кнопка видна, пока заголовок страницы вне вьюпорта, без обработчика на каждый кадр скролла.
   new IntersectionObserver(([entry]) => {
     el.toTop.hidden = entry.isIntersecting;
   }).observe(pagehead);

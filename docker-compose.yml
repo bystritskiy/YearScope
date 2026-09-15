@@ -13,7 +13,7 @@ services:
       TZ: ${TZ:-Europe/Warsaw}
       SYNC_INTERVAL_MINUTES: ${SYNC_INTERVAL_MINUTES:-1440}
     env_file:
-      # Ники, ключи и адрес KoShelf — там. См. .env.example.
+      # Ники, ключи и адрес KoShelf лежат там. См. .env.example.
       - .env
     volumes:
       # База и импорты переживают пересоздание контейнера.

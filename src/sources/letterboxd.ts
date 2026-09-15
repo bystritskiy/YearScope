@@ -55,7 +55,7 @@ export function parseRss(xml: string): Viewing[] {
     const item = chunk.split('</item>')[0];
     const watchedDate = tag(item, 'letterboxd:watchedDate');
     const title = tag(item, 'letterboxd:filmTitle');
-    // В ленту попадают ещё и списки, и отзывы без отметки о просмотре — они не про время.
+    // В ленту попадают ещё и списки, и отзывы без отметки о просмотре, они не про время.
     if (!watchedDate || !title) continue;
 
     const guid = tag(item, 'guid');
@@ -84,13 +84,13 @@ function pickDirector(crew: Array<{ job?: string; name?: string }> | undefined):
   return names.join(', ');
 }
 
-/** Хронометраж и режиссёр из TMDB с вечным кэшем; без ключа — пусто. */
+/** Хронометраж и режиссёр из TMDB с вечным кэшем; без ключа пусто. */
 async function resolveFilm(tmdbId: number | null, title: string): Promise<FilmInfo> {
   const { tmdbApiKey } = config.sources.letterboxd;
   if (!tmdbId || !tmdbApiKey) return { runtimeMin: null, director: null };
 
   const cached = getCachedFilm(tmdbId);
-  // director === null значит колонку ещё не заполняли — доберём credits.
+  // director === null значит колонку ещё не заполняли, доберём credits.
   if (cached && cached.director !== null) {
     return { runtimeMin: cached.runtimeMin, director: cached.director || null };
   }
@@ -109,7 +109,7 @@ async function resolveFilm(tmdbId: number | null, title: string): Promise<FilmIn
     cacheFilm(tmdbId, runtimeMin, movie.title ?? title, director);
     return { runtimeMin, director: director || null };
   } catch {
-    // Сеть или лимит TMDB — не роняем синк, фильм получит оценочное время.
+    // Сеть или лимит TMDB не роняют синк, фильм получит оценочное время.
     return { runtimeMin: cached?.runtimeMin ?? null, director: null };
   }
 }
@@ -145,7 +145,7 @@ export const letterboxd: Source = {
 
     upsertEntries('letterboxd', rows);
 
-    // Старые записи вне RSS тоже получают режиссёра — иначе в журнале останется год.
+    // Старые записи вне RSS тоже получают режиссёра, иначе в журнале останется год.
     const stale = db
       .prepare(
         `SELECT external_id, day, seconds, title, subtitle, estimated, meta

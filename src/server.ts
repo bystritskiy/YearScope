@@ -45,7 +45,7 @@ async function serveStatic(
   response: import('node:http').ServerResponse,
   pathname: string,
 ): Promise<void> {
-  // normalize + отсечение ".." — чтобы из статики нельзя было выйти за пределы public.
+  // normalize + отсечение "..", чтобы из статики нельзя было выйти за пределы public.
   const relative = normalize(pathname === '/' ? 'index.html' : pathname).replace(/^(\.\.[/\\])+/, '');
   const filePath = join(PUBLIC_DIR, relative);
 
@@ -66,7 +66,7 @@ async function serveStatic(
   }
 }
 
-/** Год из строки запроса; null — если передана ерунда. */
+/** Год из строки запроса; null, если передана ерунда. */
 function parseYear(url: URL): number | null {
   const raw = url.searchParams.get('year');
   if (!raw) return config.year;
@@ -192,7 +192,7 @@ const server = createServer((request, response) => {
 });
 
 server.listen(config.port, () => {
-  console.log(`[yearscope] http://localhost:${config.port} — сводка за ${config.year} год`);
+  console.log(`[yearscope] http://localhost:${config.port}, сводка за ${config.year} год`);
 
   // Демо живёт само по себе: ни синхронизации на старте, ни планировщика.
   if (config.demo) {

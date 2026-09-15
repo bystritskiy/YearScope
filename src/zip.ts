@@ -1,10 +1,10 @@
 import { inflateRawSync } from 'node:zlib';
 
 /**
- * Минимальное чтение zip: xlsx — это zip, а тянуть зависимость ради одного
+ * Минимальное чтение zip: xlsx это zip, а тянуть зависимость ради одного
  * формата не хочется. Поддерживаются два метода хранения, которые Excel и
  * выгрузки myshows реально используют: 0 (без сжатия) и 8 (deflate).
- * Zip64 не поддерживается — экспорты на сотни мегабайт тут не ожидаются.
+ * Zip64 не поддерживается: экспорты на сотни мегабайт тут не ожидаются.
  */
 
 const EOCD_SIGNATURE = 0x06054b50;
@@ -13,7 +13,7 @@ const CENTRAL_SIGNATURE = 0x02014b50;
 type Entry = { name: string; offset: number; method: number; compressedSize: number };
 
 function findEndOfCentralDirectory(buffer: Buffer): number {
-  // Комментарий в конце архива — до 64 КБ, поэтому ищем сигнатуру с хвоста.
+  // Комментарий в конце архива занимает до 64 КБ, поэтому ищем сигнатуру с хвоста.
   const start = Math.max(0, buffer.length - 66_000);
   for (let index = buffer.length - 22; index >= start; index -= 1) {
     if (buffer.readUInt32LE(index) === EOCD_SIGNATURE) return index;

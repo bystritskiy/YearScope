@@ -6,7 +6,7 @@
 </p>
 
 <p align="center">
-  Игры, сериалы, кино, книги и тренировки — на одном экране и в сумме часов.
+  Игры, сериалы, кино, книги и тренировки на одном экране.
 </p>
 
 <p align="center">
@@ -20,32 +20,20 @@
 
 ## Что это
 
-Ты играешь, смотришь, читаешь и тренируешься — и каждый сервис знает только свой кусочек. YearScope собирает их в одну картину: **сколько часов за год, на что именно и в каком месяце**.
-
-Всё работает дома. Аккаунтов нет, трекинга нет, данные лежат в одном файле SQLite рядом с сервисом.
+Ты играешь, смотришь, читаешь и тренируешься, и каждый сервис знает только свой кусочек. YearScope собирает их в одну картину. Self-hosted.
 
 ## Откуда данные
 
-- 🎮 игры — [gowithme.club](https://gowithme.club)
-- 📺 сериалы — [myshows.me](https://myshows.me)
-- 🎬 кино — [letterboxd.com](https://letterboxd.com)
-- 📚 книги — [koshelf](https://github.com/scampower3/koshelf)
-- 🏃 тренировки — [intervals.icu](https://intervals.icu)
+- 🎮 игры: [gowithme.club](https://gowithme.club)
+- 📺 сериалы: [myshows.me](https://myshows.me)
+- 🎬 кино: [letterboxd.com](https://letterboxd.com)
+- 📚 книги: [koshelf](https://github.com/scampower3/koshelf)
+- 🏃 тренировки: [intervals.icu](https://intervals.icu)
 
 ## Установка
 
-Нужен только [Node 24+](https://nodejs.org). `npm install` не нужен: **ноль зависимостей** — свежий Node умеет SQLite и TypeScript из коробки.
-
 ```bash
-npm run demo
-```
-
-Поднимет демо-год со скриншотов на `localhost:3010` — без ключей, аккаунтов и сети.
-
-Со своими данными:
-
-```bash
-cp .env.example .env   # вписать свои ники и ключи
+cp .env.example .env
 npm start
 ```
 
@@ -55,7 +43,7 @@ npm start
 docker compose up -d --build
 ```
 
-Обязательных полей в `.env` нет: незаполненный источник просто выключается, остальные работают. Что и зачем — в [`.env.example`](.env.example), как устроены источники — в [docs/sources.md](docs/sources.md).
+Что вписать в `.env`, написано в [`.env.example`](.env.example). Как устроены источники, в [docs/sources.md](docs/sources.md).
 
 ## Лицензия
 

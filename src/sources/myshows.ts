@@ -20,7 +20,7 @@ import type { Source, SyncResult } from './types.ts';
  * добирает то, что отмечено уже после неё.
  *
  * Обе половины дают сериал в оригинальном названии и номер серии, поэтому
- * ключ `сериал|s01e04` совпадает — один эпизод из двух источников схлопывается
+ * ключ `сериал|s01e04` совпадает, и один эпизод из двух источников схлопывается
  * в одну запись и не удваивает время.
  */
 
@@ -36,7 +36,7 @@ type Episode = {
 const episodeKey = (show: string, season: string, episode: string): string =>
   `${show.trim().toLowerCase()}|s${season}e${episode}`;
 
-/** Самая свежая выгрузка в папке импорта; null — если папки или файлов нет. */
+/** Самая свежая выгрузка в папке импорта; null, если папки или файлов нет. */
 function findLatestExport(directory: string): string | null {
   try {
     const candidates = readdirSync(directory)
@@ -180,7 +180,7 @@ export const myshows: Source = {
     }
 
     // Выгрузка идёт последней и перекрывает ленту: в ней настоящая дата
-    // просмотра, а в ленте — момент простановки отметки.
+    // просмотра, а в ленте момент простановки отметки.
     const merged = new Map<string, Episode>();
     for (const episode of feed) merged.set(episode.key, episode);
     for (const episode of exported.episodes) merged.set(episode.key, episode);
@@ -225,11 +225,11 @@ export const myshows: Source = {
     const oldestInFeed = feed.reduce((min, e) => (min === '' || e.day < min ? e.day : min), '');
     const gap =
       lastExported && oldestInFeed && oldestInFeed > lastExported
-        ? `отметки между ${lastExported} и ${oldestInFeed} могли не попасть в сводку — обнови выгрузку профиля`
+        ? `отметки между ${lastExported} и ${oldestInFeed} могли не попасть в сводку, обнови выгрузку профиля`
         : null;
 
     const warning = !exportPath
-      ? 'выгрузка профиля не найдена в data/imports — учтены только последние 25 отметок из ленты'
+      ? 'выгрузка профиля не найдена в data/imports, учтены только последние 25 отметок из ленты'
       : (gap ?? (feedFailed ? 'лента myshows недоступна, показана только выгрузка' : null));
 
     const seconds = rows.reduce((sum, row) => sum + row.seconds, 0);

@@ -16,7 +16,7 @@ import {
  * иначе каждый пересъём скриншотов менял бы все числа в README.
  */
 
-/** mulberry32 — короткий и воспроизводимый PRNG; Math.random() здесь не годится. */
+/** mulberry32: короткий и воспроизводимый PRNG; Math.random() здесь не годится. */
 function rng(seed: number): () => number {
   let state = seed >>> 0;
   return () => {
@@ -91,7 +91,7 @@ const WORKOUTS: Array<[string, string]> = [
   ['Pool', 'Плавание'],
 ];
 
-/** Книги «начались» в июне — чтобы демо показывало и честную отметку о пробеле. */
+/** Книги «начались» в июне, чтобы демо показывало и честную отметку о пробеле. */
 const BOOKS_START = '-06-10';
 
 function daysOfYear(year: number): string[] {
@@ -139,7 +139,7 @@ export function seedDemo(year: number): void {
   for (const day of days) {
     const weekend = isWeekend(day);
 
-    // Игры: почти каждый день понемногу, на выходных — по нескольку тайтлов.
+    // Игры: почти каждый день понемногу, на выходных по нескольку тайтлов.
     if (random() < (weekend ? 0.85 : 0.55)) {
       const count = weekend ? between(1, 3) : 1;
       const chosen = new Set<number>();
@@ -162,7 +162,7 @@ export function seedDemo(year: number): void {
     if (random() < 0.4) {
       const [show, list] = pick(SHOWS);
       const count = Math.min(between(1, weekend ? 4 : 2), list.length);
-      // Серии идут подряд от случайной точки — как при обычном запое сериалом.
+      // Серии идут подряд от случайной точки, как при обычном запое сериалом.
       const start = Math.floor(random() * list.length);
       for (let i = 0; i < count; i += 1) {
         const episode = list[(start + i) % list.length]!;
@@ -188,7 +188,7 @@ export function seedDemo(year: number): void {
       });
     }
 
-    // Книги: только со старта учёта — демо показывает и честную отметку о пробеле.
+    // Книги: только со старта учёта, чтобы демо показывало и честную отметку о пробеле.
     if (day.slice(4) >= BOOKS_START && random() < 0.45) {
       const [title, author] = pick(BOOKS);
       books.push({
@@ -268,8 +268,8 @@ export function seedDemo(year: number): void {
     Math.round(rows.reduce((sum, row) => sum + row.seconds, 0) / 3600);
 
   /**
-   * coversFrom — не «первая запись», а с какой даты источник вообще ведёт учёт.
-   * У четырёх он ведётся с начала года, у книг — с июня: демо должно показывать
+   * coversFrom это не «первая запись», а дата, с которой источник ведёт учёт.
+   * У четырёх он ведётся с начала года, у книг с июня: демо должно показывать
    * и эту оговорку, она в продукте на видном месте.
    */
   const state = (

@@ -44,7 +44,7 @@ export const gowithme: Source = {
 
   async sync(year: number): Promise<SyncResult> {
     const { baseUrl, player } = config.sources.gowithme;
-    // byDayGames — opt-in агрегат day × title; без include профиль не раздувается.
+    // byDayGames это opt-in агрегат day × title; без include профиль не раздувается.
     const url =
       `${baseUrl}/api/player?name=${encodeURIComponent(player)}` +
       `&period=year&include=byDayGames`;
@@ -62,7 +62,7 @@ export const gowithme: Source = {
       days.map((row) => ({ day: row.day, seconds: row.total_seconds, items: row.sessions })),
     );
 
-    // Одна строка журнала на игру в день — не сырые сессии и не «за день» целиком.
+    // Одна строка журнала на игру в день, не сырые сессии и не «за день» целиком.
     const entries: EntryRow[] = dayGames.map((game) => ({
       externalId: `${game.day}|${game.title_id}`,
       day: game.day,

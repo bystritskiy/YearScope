@@ -5,8 +5,8 @@ import { config, type SourceId } from './config.ts';
 
 /**
  * Источники отдают данные с разной детализацией, и подгонять их под общий
- * знаменатель нечестно: gowithme знает точный день, KoShelf — только месяц.
- * Поэтому храним два ряда — daily и monthly — и на чтении берём тот,
+ * знаменатель нечестно: gowithme знает точный день, KoShelf только месяц.
+ * Поэтому храним два ряда, daily и monthly, и на чтении берём тот,
  * что доступен, а гранулярность показываем в интерфейсе.
  */
 
@@ -30,11 +30,11 @@ export type SyncStatus = {
   source: SourceId;
   status: 'ok' | 'error';
   message?: string | null;
-  /** С какой даты у источника вообще есть данные — чтобы не врать про пробелы. */
+  /** С какой даты у источника вообще есть данные, чтобы не врать про пробелы. */
   coversFrom?: string | null;
   granularity?: Granularity;
   durationMs?: number;
-  /** Оговорка о полноте данных — попадает в блок «Что стоит знать о данных». */
+  /** Оговорка о полноте данных: показывается на карточке источника. */
   warning?: string | null;
 };
 
@@ -132,7 +132,7 @@ const yearRange = (year: number) => ({ from: `${year}-01-01`, to: `${year}-12-31
 
 /**
  * Полная замена ряда за год: источники вроде gowithme пересчитывают прошлое
- * задним числом, поэтому дописывать по одной строке нельзя — разъедется.
+ * задним числом, поэтому дописывать по одной строке нельзя, разъедется.
  */
 export function replaceDaily(source: SourceId, year: number, rows: DailyRow[]): void {
   const { from, to } = yearRange(year);
@@ -173,7 +173,7 @@ export function replaceMonthly(source: SourceId, year: number, rows: MonthlyRow[
 
 /**
  * Накопительная запись. Letterboxd отдаёт скользящее окно из ~50 записей,
- * поэтому старое нельзя удалять — только дополнять.
+ * поэтому старое нельзя удалять, только дополнять.
  */
 export function upsertEntries(source: SourceId, rows: EntryRow[]): number {
   const ins = db.prepare(`
@@ -211,7 +211,7 @@ export function upsertEntries(source: SourceId, rows: EntryRow[]): number {
 
 /**
  * Полная замена записей за год: для источников вроде gowithme, которые
- * пересчитывают прошлое — иначе устаревшие day×title останутся в журнале.
+ * пересчитывают прошлое, иначе устаревшие day×title останутся в журнале.
  */
 export function replaceEntries(source: SourceId, year: number, rows: EntryRow[]): void {
   const { from, to } = yearRange(year);
@@ -242,7 +242,7 @@ export function replaceEntries(source: SourceId, year: number, rows: EntryRow[])
   }
 }
 
-/** Пересобирает daily из накопленных entries — для источников, живущих на записях. */
+/** Пересобирает daily из накопленных entries, для источников, живущих на записях. */
 export function rebuildDailyFromEntries(source: SourceId, year: number): void {
   const { from, to } = yearRange(year);
   const rows = db
@@ -307,7 +307,7 @@ export function getHighlights(source: SourceId, year: number, limit = 5): Highli
 
 export type FilmCache = {
   runtimeMin: number | null;
-  /** null — ещё не запрашивали; '' — в TMDB режиссёра нет. */
+  /** null значит ещё не запрашивали, '' значит в TMDB режиссёра нет. */
   director: string | null;
 };
 
@@ -396,7 +396,7 @@ export function getSourceTotals(year: number): Array<{ source: string; seconds: 
   return [...totals.values()];
 }
 
-/** Помесячный ряд по каждому источнику — из daily, где есть, иначе из monthly. */
+/** Помесячный ряд по каждому источнику: из daily, где есть, иначе из monthly. */
 export function getMonthlyBreakdown(year: number): Array<{ source: string; month: string; seconds: number }> {
   const { from, to } = yearRange(year);
   const fromDaily = db
@@ -444,7 +444,7 @@ export type JournalItem = {
   subtitle: string | null;
   seconds: number;
   estimated: boolean;
-  /** item — конкретная запись (фильм, серия), day — дневной итог источника. */
+  /** item это конкретная запись (фильм, серия), day это дневной итог источника. */
   kind: 'item' | 'day';
 };
 
@@ -464,7 +464,7 @@ function pluralSessions(count: number): string {
  *
  * У источников разная детализация: фильмы, серии, книги, игры и тренировки
  * лежат поштучно в entries. Источники без записей попадают в ленту одной
- * дневной строкой из daily — чтобы не выдумывать разбивку задним числом.
+ * дневной строкой из daily, чтобы не выдумывать разбивку задним числом.
  */
 export function getJournal(year: number, source?: SourceId): JournalDay[] {
   const { from, to } = yearRange(year);

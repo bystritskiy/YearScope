@@ -5,7 +5,7 @@ import type { Source, SyncResult } from './types.ts';
 
 /**
  * Тренировки берутся из intervals.icu, а не из Garmin напрямую: туда они и так
- * прилетают с часов, а доступ несравнимо проще — HTTP Basic с персональным
+ * прилетают с часов, а доступ несравнимо проще: HTTP Basic с персональным
  * ключом вместо пароля от аккаунта или партнёрской программы Garmin.
  * Весь год приезжает одним запросом.
  */
@@ -49,13 +49,13 @@ const label = (type: string | null | undefined): string =>
 
 export const intervals: Source = {
   id: 'intervals',
-  // Без ключа источник просто не подключён — на экране так и будет написано.
+  // Без ключа источник просто не подключён, на экране так и будет написано.
   enabled: Boolean(config.sources.intervals.apiKey),
 
   async sync(year: number): Promise<SyncResult> {
     const { apiKey, baseUrl, athleteId } = config.sources.intervals;
 
-    // Basic-авторизация: логин всегда литерал API_KEY, пароль — сам ключ.
+    // Basic-авторизация: логин всегда литерал API_KEY, пароль это сам ключ.
     const authorization = `Basic ${Buffer.from(`API_KEY:${apiKey}`).toString('base64')}`;
 
     const url =
@@ -75,7 +75,7 @@ export const intervals: Source = {
       if (!day?.startsWith(`${year}-`)) continue;
 
       // moving_time честнее для «сколько занимался», но у силовых и йоги
-      // он часто нулевой — тогда остаётся общая длительность.
+      // он часто нулевой, тогда остаётся общая длительность.
       const moving = activity.moving_time ?? 0;
       const seconds = moving > 0 ? moving : (activity.elapsed_time ?? 0);
       if (seconds <= 0) continue;

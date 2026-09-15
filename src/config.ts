@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 
 /**
  * Всё настраивается через переменные окружения. Значений по умолчанию хватает,
- * чтобы сервис поднялся без .env — но источники тогда либо выключены,
+ * чтобы сервис поднялся без .env, но источники тогда либо выключены,
  * либо ходят в пустоту: свои ники и адреса нужно указать явно.
  */
 
@@ -18,7 +18,7 @@ function envInt(name: string, fallback: number): number {
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
-/** Версия продукта — единый источник: package.json. Показывается в футере. */
+/** Версия продукта берётся из одного места: package.json. Показывается в футере. */
 function appVersion(): string {
   try {
     const root = dirname(dirname(fileURLToPath(import.meta.url)));
@@ -42,7 +42,7 @@ const dataDir = env('DATA_DIR', join(process.cwd(), demo ? 'data/demo' : 'data')
 /**
  * Источник включён, только если выключатель не сняли И известно, откуда брать
  * данные. Иначе пустой ник молча превратился бы в запрос в никуда и красную
- * ошибку на экране — лучше честно показать «не настроен».
+ * ошибку на экране. Лучше честно показать «не настроен».
  */
 const on = (flag: string, ...required: string[]): boolean =>
   env(flag, 'true') !== 'false' && required.every((value) => value !== '');

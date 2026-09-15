@@ -30,7 +30,7 @@ export const koshelf: Source = {
     const secondsByDay = new Map<string, number>();
     const sessionsByDay = new Map<string, number>();
     const secondsByBook = new Map<string, { title: string; author: string | null; seconds: number }>();
-    // Чтение конкретной книги в конкретный день — строка журнала.
+    // Чтение конкретной книги в конкретный день это строка журнала.
     const byBookAndDay = new Map<string, EntryRow>();
 
     for (const month of months) {
@@ -49,7 +49,7 @@ export const koshelf: Source = {
         const title = item?.title ?? 'Без названия';
         const author = item?.authors?.[0]?.replace(/\s+/g, ' ').trim() ?? null;
 
-        // Одну книгу можно читать несколькими заходами за день — суммируем.
+        // Одну книгу можно читать несколькими заходами за день, поэтому суммируем.
         const entryKey = `${event.item_ref}|${event.start}`;
         const entry = byBookAndDay.get(entryKey);
         if (entry) {

@@ -22,7 +22,7 @@ export type SourceSummary = {
   status: 'ok' | 'error' | 'never';
   message: string | null;
   lastRun: string | null;
-  /** С какой даты у источника есть данные — если это не 1 января, показываем предупреждение. */
+  /** С какой даты у источника есть данные. Если это не 1 января, показываем предупреждение. */
   coversFrom: string | null;
   /** Оговорка о полноте данных от самого источника. */
   warning: string | null;
@@ -32,7 +32,7 @@ export type SourceSummary = {
 
 export type Summary = {
   year: number;
-  /** Версия продукта из package.json — клиент показывает её в футере. */
+  /** Версия продукта из package.json: клиент показывает её в футере. */
   version: string;
   generatedAt: string;
   totalSeconds: number;

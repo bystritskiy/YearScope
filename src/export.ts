@@ -45,7 +45,7 @@ function csvEscape(value: string): string {
   return value;
 }
 
-/** Плоский журнал для Excel/Numbers: одна строка — одно событие. */
+/** Плоский журнал для Excel/Numbers: одна строка это одно событие. */
 export function buildJournalCsv(year = config.year): string {
   const days = getJournal(year);
   const lines = ['day,source,title,subtitle,seconds,hours,estimated'];
@@ -67,6 +67,6 @@ export function buildJournalCsv(year = config.year): string {
     }
   }
 
-  // BOM — чтобы Excel на Windows не ломал кириллицу.
+  // BOM нужен, чтобы Excel на Windows не ломал кириллицу.
   return `\uFEFF${lines.join('\n')}\n`;
 }

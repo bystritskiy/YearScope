@@ -5,7 +5,7 @@ import { readZip } from './zip.ts';
  * берутся как текст, форматирование и формулы игнорируются.
  *
  * Важная тонкость: Excel не пишет пустые ячейки, поэтому позицию колонки
- * нельзя определять по порядку — только по атрибуту r ("C5"). Иначе строка
+ * нельзя определять по порядку, только по атрибуту r ("C5"). Иначе строка
  * с пустой оценкой съедет на колонку влево.
  */
 
@@ -32,7 +32,7 @@ function columnToIndex(reference: string): number {
 function parseSharedStrings(xml: string | undefined): string[] {
   if (!xml) return [];
   return [...xml.matchAll(/<si>([\s\S]*?)<\/si>/g)].map((match) => {
-    // Внутри <si> может быть несколько <t> — если строка разбита форматированием.
+    // Внутри <si> может быть несколько <t>, если строка разбита форматированием.
     const parts = [...match[1].matchAll(/<t[^>]*>([\s\S]*?)<\/t>/g)].map((part) => part[1]);
     return decodeEntities(parts.join(''));
   });
@@ -85,7 +85,7 @@ export function readXlsx(buffer: Buffer): Map<string, string[][]> {
 
   // Связь «лист → файл» идёт через r:id, а не через порядок листов в книге.
   // Теги ловим и самозакрывающиеся, и парные: myshows выгружает через Go XLSX,
-  // а та пишет <sheet ...></sheet>, тогда как Excel — <sheet .../>.
+  // а та пишет <sheet ...></sheet>, тогда как Excel пишет <sheet .../>.
   const relationships = new Map<string, string>();
   for (const match of (text('xl/_rels/workbook.xml.rels') ?? '').matchAll(
     /<Relationship([^>]*?)\/?>/g,
