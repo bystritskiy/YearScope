@@ -10,8 +10,6 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Node-%E2%89%A5%2024-5865f2?style=flat-square" alt="Node ≥ 24" />
-  <img src="https://img.shields.io/badge/зависимостей-0-22c55e?style=flat-square" alt="0 зависимостей" />
   <img src="https://img.shields.io/badge/self--hosted-локально-06b6d4?style=flat-square" alt="self-hosted" />
   <img src="https://img.shields.io/badge/license-MIT-a78bfa?style=flat-square" alt="MIT" />
 </p>
