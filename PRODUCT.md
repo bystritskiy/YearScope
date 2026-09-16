@@ -1,7 +1,7 @@
 # Product
 
 <!-- impeccable:product-schema 1 -->
-<!-- provenance: пользователь делегировал все решения («реши всё сам»); интервью не проводилось, каждый факт ниже извлечён из README.md, кода и конфигов репозитория -->
+<!-- provenance: the user delegated every decision ("decide everything yourself"); no interview was held, every fact below is taken from README.md, the code and the repo configs -->
 
 ## Platform
 
@@ -9,41 +9,41 @@ web
 
 ## Users
 
-Один пользователь, он же владелец. Личный дашборд, открывается дома в браузере с десктопа и телефона. Гостей, ролей и шаринга нет.
+One user, who is also the owner. A personal dashboard, opened at home in a browser on desktop and phone. No guests, roles or sharing.
 
 ## Product Purpose
 
-Показать на одном экране, сколько времени за год ушло на игры, сериалы, кино, книги и тренировки: общий итог, доли, помесячный график и лента по дням. Успех выглядит так: открыл, за секунды считал картину года, при желании в один клик провалился в детали активности.
+Show on one screen how much of the year went to games, TV shows, movies, books and workouts: the overall total, shares, a monthly chart and a day-by-day feed. Success looks like this: open it, read the picture of the year in seconds, and drill into an activity's details with one click when wanted.
 
 ## Positioning
 
-Сводит пять несовместимых источников в одну картину года, не заставляя их врать под общий знаменатель: у каждого своя гранулярность, и она видна в интерфейсе. Честно подписывает границы данных (с какой даты источник вообще ведёт учёт), а не подразумевает их.
+Brings five incompatible sources into one picture of the year without forcing them to lie under a common denominator: each has its own granularity, and it is visible in the interface. Labels the limits of the data honestly (from which date a source keeps records at all) instead of implying them.
 
 ## Operating Context
 
-Живёт рядом с источниками: на домашнем NAS в Docker по соседству с KoShelf, локально через `npm start`. Секреты лежат в `.env` (TMDB, intervals.icu). История сериалов приходит ручной выгрузкой myshows в `data/imports/*.xlsx`. Фоновая синхронизация идёт раз в сутки от старта сервиса плюс одна на старте; ручная запускается кнопкой и идемпотентна (повтор присоединяется к текущей).
+Lives next to its sources: on a home NAS in Docker alongside KoShelf, or locally via `npm start`. Secrets live in `.env` (TMDB, intervals.icu). TV show history arrives as a manual myshows export in `data/imports/*.xlsx`. Background sync runs once a day counted from service start, plus once on start; manual sync is a button and idempotent (a repeat joins the one in progress).
 
 ## Capabilities and Constraints
 
-- Источники: gowithme (игры, годовой ряд заменяется целиком), Letterboxd (кино, накопление из RSS ~50 записей + хронометраж из TMDB), KoShelf (книги, помесячный календарь), myshows (сериалы, xlsx-выгрузка + лента из 25 отметок), intervals.icu (тренировки, весь год одним запросом).
-- Без TMDB-ключа время фильмов считается оценкой по средней длительности; без ключа intervals источник выключен.
-- Модель данных: `daily`/`monthly` (временные ряды), `entries` (события с настоящей датой), `highlights` (топы без даты), `sync_state` (статус + `covers_from`).
-- Экраны: Сводка, Журнал с фильтром по активности, карточка одного источника, экспорт JSON/CSV.
-- Стек: Node ≥ 24 (26 в проде), ноль зависимостей, SQLite и TypeScript из коробки; статика в `public/`; API без авторизации, защита только локальной сетью.
-- Часовой пояс контейнера обязан совпадать с KoShelf (Europe/Warsaw), иначе чтение разъедется по соседним дням.
+- Sources: gowithme (games, the yearly series is replaced wholesale), Letterboxd (movies, accumulated from an RSS feed of ~50 entries + runtime from TMDB), KoShelf (books, monthly calendar), myshows (TV shows, xlsx export + a feed of 25 check-ins), intervals.icu (workouts, the whole year in one request).
+- Without a TMDB key movie time is an estimate from an average runtime; without an intervals key the source is off.
+- Data model: `daily`/`monthly` (time series), `entries` (events with a real date), `highlights` (undated tops), `sync_state` (status + `covers_from`).
+- Screens: Summary, Journal with an activity filter, single-source card, JSON/CSV export.
+- Stack: Node ≥ 24 (26 in production), zero dependencies, SQLite and TypeScript out of the box; static files in `public/`; API without auth, protected only by the local network.
+- The container time zone must match KoShelf (Europe/Warsaw), otherwise reading spills into neighbouring days.
 
 ## Brand Commitments
 
-Имя YearScope, знак это `public/logo-mark.svg` (кольцо). Русский голос: спокойный, точный, без маркетинга («часов за год», «суток непрерывно»). Тёмная тема единственная, светлой нет и не планируется. Эмодзи служат иконками активностей (🎮📺🎬📚🏃), замена на иконочный шрифт не требуется. У каждой активности свой акцентный цвет, он кодирует её везде: карточки, график, лента, навигация. Длинных тире в текстах нет: фраза перестраивается под запятую, двоеточие или точку.
+The name is YearScope, the mark is `public/logo-mark.svg` (a ring). Voice: calm, precise, no marketing ("hours this year", "days nonstop"). The dark theme is the only one; there is no light theme and none is planned. Emoji serve as activity icons (🎮📺🎬📚🏃); replacing them with an icon font is not required. Each activity has its own accent colour that encodes it everywhere: cards, chart, feed, navigation. No em dashes in copy: a phrase is restructured around a comma, colon or full stop.
 
 ## Evidence on Hand
 
-Живая база `data/yearscope.db` (2026 год, ~692 ч, все пять источников синхронизируются успешно). Выгрузка `data/imports/myshows-export.xlsx`. Реальные ответы API: `GET /api/summary`, `/api/journal`, `/api/source`, `/api/export`, `/api/health`, `POST /api/sync`.
+Live database `data/yearscope.db` (year 2026, ~692 h, all five sources sync successfully). Export `data/imports/myshows-export.xlsx`. Real API responses: `GET /api/summary`, `/api/journal`, `/api/source`, `/api/export`, `/api/health`, `POST /api/sync`.
 
 ## Product Principles
 
-1. Честность о покрытии важнее красивой цифры: неполные данные подписаны рядом с итогом, а не спрятаны.
-2. Локальность и приватность: данные живут дома, аккаунтов, аналитики и трекинга нет.
-3. Ноль обслуживания: нет сборки, нет зависимостей, пересоздание контейнера ничего не теряет (данные в томе `./data`).
-4. Источники не подгоняются друг под друга: разная детализация видна как есть.
-5. Один экран, один ответ: сводка читается за секунды, детали в один клик, экспорта хватает для Excel.
+1. Honesty about coverage beats a pretty number: incomplete data is labelled next to the total, not hidden.
+2. Local and private: data lives at home; no accounts, analytics or tracking.
+3. Zero maintenance: no build, no dependencies, recreating the container loses nothing (data in the `./data` volume).
+4. Sources are not bent to fit each other: differing granularity is shown as is.
+5. One screen, one answer: the summary reads in seconds, details are one click away, the export is enough for Excel.

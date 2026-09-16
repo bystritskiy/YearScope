@@ -45,7 +45,7 @@ async function serveStatic(
   response: import('node:http').ServerResponse,
   pathname: string,
 ): Promise<void> {
-  // normalize + отсечение "..", чтобы из статики нельзя было выйти за пределы public.
+  // normalize + strip ".." so static serving cannot escape public.
   const relative = normalize(pathname === '/' ? 'index.html' : pathname).replace(/^(\.\.[/\\])+/, '');
   const filePath = join(PUBLIC_DIR, relative);
 
@@ -62,11 +62,11 @@ async function serveStatic(
     response.end(file);
   } catch {
     response.writeHead(404, { 'content-type': 'text/plain; charset=utf-8' });
-    response.end('Не найдено');
+    response.end('Not found');
   }
 }
 
-/** Год из строки запроса; null, если передана ерунда. */
+/** The year from the query string; null if it is garbage. */
 function parseYear(url: URL): number | null {
   const raw = url.searchParams.get('year');
   if (!raw) return config.year;
@@ -80,7 +80,7 @@ const server = createServer((request, response) => {
   if (url.pathname === '/api/summary') {
     const year = parseYear(url);
     if (year === null) {
-      sendJson(response, 400, { error: 'год указан неверно' });
+      sendJson(response, 400, { error: 'invalid year' });
       return;
     }
     sendJson(response, 200, buildSummary(year));
@@ -90,12 +90,12 @@ const server = createServer((request, response) => {
   if (url.pathname === '/api/journal') {
     const year = parseYear(url);
     if (year === null) {
-      sendJson(response, 400, { error: 'год указан неверно' });
+      sendJson(response, 400, { error: 'invalid year' });
       return;
     }
     const source = url.searchParams.get('source');
     if (source && !SOURCE_ORDER.includes(source as SourceId)) {
-      sendJson(response, 404, { error: 'неизвестный источник' });
+      sendJson(response, 404, { error: 'unknown source' });
       return;
     }
     sendJson(response, 200, {
@@ -109,16 +109,16 @@ const server = createServer((request, response) => {
     const year = parseYear(url);
     const id = url.searchParams.get('id');
     if (year === null) {
-      sendJson(response, 400, { error: 'год указан неверно' });
+      sendJson(response, 400, { error: 'invalid year' });
       return;
     }
     if (!id || !SOURCE_ORDER.includes(id as SourceId)) {
-      sendJson(response, 404, { error: 'неизвестный источник' });
+      sendJson(response, 404, { error: 'unknown source' });
       return;
     }
     const detail = buildSourceDetail(id as SourceId, year);
     if (!detail) {
-      sendJson(response, 404, { error: 'нет данных по источнику' });
+      sendJson(response, 404, { error: 'no data for this source' });
       return;
     }
     sendJson(response, 200, detail);
@@ -128,7 +128,7 @@ const server = createServer((request, response) => {
   if (url.pathname === '/api/export') {
     const year = parseYear(url);
     if (year === null) {
-      sendJson(response, 400, { error: 'год указан неверно' });
+      sendJson(response, 400, { error: 'invalid year' });
       return;
     }
     const format = url.searchParams.get('format') ?? 'json';
@@ -150,13 +150,13 @@ const server = createServer((request, response) => {
       );
       return;
     }
-    sendJson(response, 400, { error: 'format: json или csv' });
+    sendJson(response, 400, { error: 'format: json or csv' });
     return;
   }
 
   if (url.pathname === '/api/sync' && request.method === 'POST') {
-    // В демо «Обновить» перегенерирует вымышленный год, а не ходит в сеть:
-    // ключей всё равно нет, и кнопка иначе просто рисовала бы ошибки.
+    // In demo, "Refresh" regenerates the fictional year instead of going online:
+    // there are no keys anyway, and the button would otherwise just paint errors.
     if (config.demo) {
       seedDemo(config.year);
       sendJson(response, 202, { started: true, alreadyRunning: false, demo: true });
@@ -165,8 +165,8 @@ const server = createServer((request, response) => {
 
     const already = isSyncRunning();
     runSync().then(
-      (reports) => logReports(already ? 'присоединился к текущей' : 'по запросу', reports),
-      (error) => console.error('[sync] ошибка:', error),
+      (reports) => logReports(already ? 'joined the running sync' : 'on request', reports),
+      (error) => console.error('[sync] error:', error),
     );
     sendJson(response, 202, { started: true, alreadyRunning: already });
     return;
@@ -192,19 +192,19 @@ const server = createServer((request, response) => {
 });
 
 server.listen(config.port, () => {
-  console.log(`[yearscope] http://localhost:${config.port}, сводка за ${config.year} год`);
+  console.log(`[yearscope] http://localhost:${config.port}, summary for ${config.year}`);
 
-  // Демо живёт само по себе: ни синхронизации на старте, ни планировщика.
+  // Demo lives on its own: no sync on start and no scheduler.
   if (config.demo) {
     seedDemo(config.year);
-    console.log('[yearscope] демо-режим: вымышленный год, источники не опрашиваются');
+    console.log('[yearscope] demo mode: a fictional year, sources are not polled');
     return;
   }
 
   if (config.syncOnBoot) {
     runSync().then(
-      (reports) => logReports('старт', reports),
-      (error) => console.error('[sync] ошибка на старте:', error),
+      (reports) => logReports('startup', reports),
+      (error) => console.error('[sync] error on startup:', error),
     );
   }
   startScheduler();

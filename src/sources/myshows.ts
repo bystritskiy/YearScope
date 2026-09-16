@@ -14,14 +14,14 @@ import { readXlsx } from '../xlsx.ts';
 import type { Source, SyncResult } from './types.ts';
 
 /**
- * У myshows нет публичного способа получить историю просмотров: profile.Feed
- * отдаёт 25 последних отметок и игнорирует пагинацию, а profile.Episodes
- * требует авторизации. Поэтому история приезжает выгрузкой профиля, а лента
- * добирает то, что отмечено уже после неё.
+ * myshows has no public way to get watch history: profile.Feed returns the
+ * last 25 check-ins and ignores pagination, while profile.Episodes requires
+ * auth. So history arrives as a profile export, and the feed picks up what
+ * was checked in after it.
  *
- * Обе половины дают сериал в оригинальном названии и номер серии, поэтому
- * ключ `сериал|s01e04` совпадает, и один эпизод из двух источников схлопывается
- * в одну запись и не удваивает время.
+ * Both halves give the show by its original title plus the episode number, so
+ * the `show|s01e04` key matches, and one episode from two sources collapses
+ * into a single record without doubling the time.
  */
 
 type Episode = {
@@ -36,7 +36,7 @@ type Episode = {
 const episodeKey = (show: string, season: string, episode: string): string =>
   `${show.trim().toLowerCase()}|s${season}e${episode}`;
 
-/** Самая свежая выгрузка в папке импорта; null, если папки или файлов нет. */
+/** The newest export in the import folder; null if there is no folder or no files. */
 function findLatestExport(directory: string): string | null {
   try {
     const candidates = readdirSync(directory)
@@ -56,6 +56,7 @@ function readExport(path: string, year: number): { episodes: Episode[]; runtimes
   const sheets = readXlsx(readFileSync(path));
 
   const runtimes = new Map<string, number>();
+  // Sheet names are what myshows writes into the export (Russian UI): 'Сериалы' = shows, 'Эпизоды' = episodes.
   for (const row of (sheets.get('Сериалы') ?? []).slice(1)) {
     const [title, , , runtime] = row;
     const minutes = Number.parseInt(runtime ?? '', 10);
@@ -120,7 +121,7 @@ async function readFeed(year: number): Promise<Episode[]> {
   return episodes;
 }
 
-/** Хронометраж серии: выгрузка → кэш → API. null, если узнать не удалось. */
+/** Episode runtime: export → cache → API. null if it could not be determined. */
 async function resolveRuntime(show: string, fromExport: Map<string, number>): Promise<number | null> {
   const key = show.trim().toLowerCase();
 
@@ -170,7 +171,7 @@ export const myshows: Source = {
       ? readExport(exportPath, year)
       : { episodes: [] as Episode[], runtimes: new Map<string, number>() };
 
-    // Лента не должна ронять импорт истории: без сети остаёмся на выгрузке.
+    // The feed must not break the history import: without network we stay on the export.
     let feed: Episode[] = [];
     let feedFailed = false;
     try {
@@ -179,8 +180,8 @@ export const myshows: Source = {
       feedFailed = true;
     }
 
-    // Выгрузка идёт последней и перекрывает ленту: в ней настоящая дата
-    // просмотра, а в ленте момент простановки отметки.
+    // The export goes last and overrides the feed: it has the real watch date,
+    // whereas the feed has the moment the check-in was made.
     const merged = new Map<string, Episode>();
     for (const episode of feed) merged.set(episode.key, episode);
     for (const episode of exported.episodes) merged.set(episode.key, episode);
@@ -219,26 +220,26 @@ export const myshows: Source = {
         .map(([show, seconds]) => ({ title: show, subtitle: null, seconds })),
     );
 
-    // Между датой выгрузки и окном ленты может быть провал: если отмечено
-    // больше 25 серий, часть в сводку не попадёт вообще.
+    // There can be a gap between the export date and the feed window: if more
+    // than 25 episodes were checked in, some never make it into the summary.
     const lastExported = exported.episodes.reduce((max, e) => (e.day > max ? e.day : max), '');
     const oldestInFeed = feed.reduce((min, e) => (min === '' || e.day < min ? e.day : min), '');
     const gap =
       lastExported && oldestInFeed && oldestInFeed > lastExported
-        ? `отметки между ${lastExported} и ${oldestInFeed} могли не попасть в сводку, обнови выгрузку профиля`
+        ? `check-ins between ${lastExported} and ${oldestInFeed} may be missing from the summary, refresh the profile export`
         : null;
 
     const warning = !exportPath
-      ? 'выгрузка профиля не найдена в data/imports, учтены только последние 25 отметок из ленты'
-      : (gap ?? (feedFailed ? 'лента myshows недоступна, показана только выгрузка' : null));
+      ? 'profile export not found in data/imports, only the last 25 check-ins from the feed are counted'
+      : (gap ?? (feedFailed ? 'myshows feed unavailable, showing the export only' : null));
 
     const seconds = rows.reduce((sum, row) => sum + row.seconds, 0);
-    const estimateNote = estimated ? `, хронометраж оценкой у ${estimated}` : '';
+    const estimateNote = estimated ? `, runtime estimated for ${estimated}` : '';
 
     return {
       coversFrom: exportPath ? null : (oldestInFeed || null),
       granularity: 'day',
-      summary: `${rows.length} серий, ${Math.round(seconds / 3600)} ч, сериалов: ${byShow.size}${estimateNote}`,
+      summary: `${rows.length} episodes, ${Math.round(seconds / 3600)} h, shows: ${byShow.size}${estimateNote}`,
       warning,
     };
   },

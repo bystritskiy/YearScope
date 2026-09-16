@@ -4,17 +4,17 @@ services:
     container_name: yearscope
     restart: unless-stopped
     ports:
-      # Внутри контейнера сервис всегда слушает 3010.
-      # Наружный порт меняется переменной YEARSCOPE_PORT.
+      # Inside the container the service always listens on 3010.
+      # The external port is changed via YEARSCOPE_PORT.
       - "${YEARSCOPE_PORT:-3010}:3010"
     environment:
-      # Часовой пояс должен совпадать с KoShelf, иначе чтение будет
-      # раскладываться по соседним дням и месячные суммы разъедутся.
+      # The time zone must match KoShelf, otherwise reading sessions
+      # spill into neighbouring days and monthly totals drift.
       TZ: ${TZ:-Europe/Warsaw}
       SYNC_INTERVAL_MINUTES: ${SYNC_INTERVAL_MINUTES:-1440}
     env_file:
-      # Ники, ключи и адрес KoShelf лежат там. См. .env.example.
+      # Nicknames, keys and the KoShelf address live there. See .env.example.
       - .env
     volumes:
-      # База и импорты переживают пересоздание контейнера.
+      # The database and imports survive container recreation.
       - ./data:/app/data

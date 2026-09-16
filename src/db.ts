@@ -4,10 +4,10 @@ import { join } from 'node:path';
 import { config, type SourceId } from './config.ts';
 
 /**
- * Источники отдают данные с разной детализацией, и подгонять их под общий
- * знаменатель нечестно: gowithme знает точный день, KoShelf только месяц.
- * Поэтому храним два ряда, daily и monthly, и на чтении берём тот,
- * что доступен, а гранулярность показываем в интерфейсе.
+ * Sources deliver data at different granularity, and forcing them under a
+ * common denominator is dishonest: gowithme knows the exact day, KoShelf only
+ * the month. So we keep two series, daily and monthly, use whichever is
+ * available on read, and show the granularity in the interface.
  */
 
 export type DailyRow = { day: string; seconds: number; items?: number };
@@ -19,7 +19,7 @@ export type EntryRow = {
   seconds: number;
   title: string;
   subtitle?: string | null;
-  /** true, если время посчитано оценкой, а не взято из источника. */
+  /** true if the time is an estimate rather than taken from the source. */
   estimated?: boolean;
   meta?: Record<string, unknown> | null;
 };
@@ -30,11 +30,11 @@ export type SyncStatus = {
   source: SourceId;
   status: 'ok' | 'error';
   message?: string | null;
-  /** С какой даты у источника вообще есть данные, чтобы не врать про пробелы. */
+  /** From which date the source has data at all, so we do not lie about gaps. */
   coversFrom?: string | null;
   granularity?: Granularity;
   durationMs?: number;
-  /** Оговорка о полноте данных: показывается на карточке источника. */
+  /** A data-completeness caveat: shown on the source card. */
   warning?: string | null;
 };
 
@@ -76,8 +76,8 @@ db.exec(`
 
   CREATE INDEX IF NOT EXISTS entries_by_day ON entries (source, day);
 
-  -- Топ игр/книг: у таких элементов нет одной даты, только суммарное время,
-  -- поэтому они не попадают ни в daily, ни в entries.
+  -- Top games/books: such items have no single date, only total time,
+  -- so they go into neither daily nor entries.
   CREATE TABLE IF NOT EXISTS highlights (
     source    TEXT NOT NULL,
     year      INTEGER NOT NULL,
@@ -89,8 +89,8 @@ db.exec(`
     PRIMARY KEY (source, year, rank)
   );
 
-  -- Хронометраж фильмов меняется редко, а TMDB лимитирует запросы,
-  -- поэтому кэшируем навсегда и ходим в сеть только за новыми id.
+  -- Movie runtimes rarely change and TMDB rate-limits requests,
+  -- so cache forever and only go to the network for new ids.
   CREATE TABLE IF NOT EXISTS film_runtime (
     tmdb_id      INTEGER PRIMARY KEY,
     runtime_min  INTEGER,
@@ -98,8 +98,8 @@ db.exec(`
     fetched_at   TEXT NOT NULL
   );
 
-  -- Хронометраж серии у сериала: в выгрузке есть не всегда, а дёргать
-  -- shows.GetById на каждый синк ради неменяющегося числа бессмысленно.
+  -- Episode runtime per show: not always in the export, and calling
+  -- shows.GetById on every sync for a number that never changes is pointless.
   CREATE TABLE IF NOT EXISTS show_runtime (
     show         TEXT PRIMARY KEY,
     runtime_min  INTEGER,
@@ -117,7 +117,7 @@ db.exec(`
   );
 `);
 
-/** Добавляет колонку, если её ещё нет: CREATE TABLE IF NOT EXISTS их не досоздаёт. */
+/** Adds a column if it does not exist yet: CREATE TABLE IF NOT EXISTS does not add them. */
 function ensureColumn(table: string, column: string, definition: string): void {
   const columns = db.prepare(`PRAGMA table_info(${table})`).all() as Array<{ name: string }>;
   if (!columns.some((row) => row.name === column)) {
@@ -131,8 +131,8 @@ ensureColumn('film_runtime', 'director', 'TEXT');
 const yearRange = (year: number) => ({ from: `${year}-01-01`, to: `${year}-12-31` });
 
 /**
- * Полная замена ряда за год: источники вроде gowithme пересчитывают прошлое
- * задним числом, поэтому дописывать по одной строке нельзя, разъедется.
+ * Full replacement of the year's series: sources like gowithme recompute the
+ * past retroactively, so appending row by row is not an option, it would drift.
  */
 export function replaceDaily(source: SourceId, year: number, rows: DailyRow[]): void {
   const { from, to } = yearRange(year);
@@ -172,8 +172,8 @@ export function replaceMonthly(source: SourceId, year: number, rows: MonthlyRow[
 }
 
 /**
- * Накопительная запись. Letterboxd отдаёт скользящее окно из ~50 записей,
- * поэтому старое нельзя удалять, только дополнять.
+ * Accumulating write. Letterboxd returns a sliding window of ~50 entries,
+ * so old ones must never be deleted, only added to.
  */
 export function upsertEntries(source: SourceId, rows: EntryRow[]): number {
   const ins = db.prepare(`
@@ -210,8 +210,8 @@ export function upsertEntries(source: SourceId, rows: EntryRow[]): number {
 }
 
 /**
- * Полная замена записей за год: для источников вроде gowithme, которые
- * пересчитывают прошлое, иначе устаревшие day×title останутся в журнале.
+ * Full replacement of the year's entries: for sources like gowithme that
+ * recompute the past, otherwise stale day×title rows would linger in the journal.
  */
 export function replaceEntries(source: SourceId, year: number, rows: EntryRow[]): void {
   const { from, to } = yearRange(year);
@@ -242,7 +242,7 @@ export function replaceEntries(source: SourceId, year: number, rows: EntryRow[])
   }
 }
 
-/** Пересобирает daily из накопленных entries, для источников, живущих на записях. */
+/** Rebuilds daily from accumulated entries, for sources that live on entries. */
 export function rebuildDailyFromEntries(source: SourceId, year: number): void {
   const { from, to } = yearRange(year);
   const rows = db
@@ -307,7 +307,7 @@ export function getHighlights(source: SourceId, year: number, limit = 5): Highli
 
 export type FilmCache = {
   runtimeMin: number | null;
-  /** null значит ещё не запрашивали, '' значит в TMDB режиссёра нет. */
+  /** null means not requested yet, '' means TMDB has no director. */
   director: string | null;
 };
 
@@ -374,7 +374,7 @@ export function getSyncState(): Record<string, unknown>[] {
   return db.prepare('SELECT * FROM sync_state').all() as Record<string, unknown>[];
 }
 
-/** Итог по источнику за год: daily в приоритете, monthly как запасной ряд. */
+/** Per-source total for the year: daily takes priority, monthly is the fallback series. */
 export function getSourceTotals(year: number): Array<{ source: string; seconds: number; items: number }> {
   const { from, to } = yearRange(year);
   const daily = db
@@ -396,7 +396,7 @@ export function getSourceTotals(year: number): Array<{ source: string; seconds: 
   return [...totals.values()];
 }
 
-/** Помесячный ряд по каждому источнику: из daily, где есть, иначе из monthly. */
+/** Monthly series per source: from daily where available, otherwise from monthly. */
 export function getMonthlyBreakdown(year: number): Array<{ source: string; month: string; seconds: number }> {
   const { from, to } = yearRange(year);
   const fromDaily = db
@@ -444,27 +444,23 @@ export type JournalItem = {
   subtitle: string | null;
   seconds: number;
   estimated: boolean;
-  /** item это конкретная запись (фильм, серия), day это дневной итог источника. */
+  /** item is a specific record (movie, episode), day is the source's daily total. */
   kind: 'item' | 'day';
 };
 
 export type JournalDay = { day: string; total: number; items: JournalItem[] };
 
-/** «1 сессия», «2 сессии», «8 сессий». */
+/** "1 session", "2 sessions". */
 function pluralSessions(count: number): string {
-  const mod10 = count % 10;
-  const mod100 = count % 100;
-  if (mod10 === 1 && mod100 !== 11) return 'сессия';
-  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return 'сессии';
-  return 'сессий';
+  return count === 1 ? 'session' : 'sessions';
 }
 
 /**
- * Лента активностей по дням, сверху свежее.
+ * Day-by-day activity feed, newest first.
  *
- * У источников разная детализация: фильмы, серии, книги, игры и тренировки
- * лежат поштучно в entries. Источники без записей попадают в ленту одной
- * дневной строкой из daily, чтобы не выдумывать разбивку задним числом.
+ * Sources differ in granularity: movies, episodes, books, games and workouts
+ * sit item by item in entries. Sources without entries enter the feed as a
+ * single daily row from daily, so no breakdown is invented after the fact.
  */
 export function getJournal(year: number, source?: SourceId): JournalDay[] {
   const { from, to } = yearRange(year);
@@ -478,7 +474,7 @@ export function getJournal(year: number, source?: SourceId): JournalDay[] {
     )
     .all(...(source ? [from, to, source] : [from, to])) as Array<Record<string, unknown>>;
 
-  // Источники, у которых поштучных записей нет вовсе, показываем дневным итогом.
+  // Sources with no per-item entries at all are shown as a daily total.
   const detailed = new Set(
     (db.prepare('SELECT DISTINCT source FROM entries').all() as Array<{ source: string }>).map(
       (row) => row.source,
@@ -522,7 +518,7 @@ export function getJournal(year: number, source?: SourceId): JournalDay[] {
     const sessions = row.items as number;
     day.items.push({
       source: row.source as string,
-      title: 'за день',
+      title: 'daily total',
       subtitle: sessions > 0 ? `${sessions} ${pluralSessions(sessions)}` : null,
       seconds: row.seconds as number,
       estimated: false,

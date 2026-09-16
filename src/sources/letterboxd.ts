@@ -13,9 +13,9 @@ import {
 import type { Source, SyncResult } from './types.ts';
 
 /**
- * Letterboxd закрыт Cloudflare, публичный API отсутствует, а RSS хранит только
- * ~50 последних записей. Поэтому каждая синхронизация не перезаписывает год,
- * а дополняет накопленную базу: то, что уже выпало из ленты, остаётся у нас.
+ * Letterboxd sits behind Cloudflare, has no public API, and the RSS only keeps
+ * the ~50 latest entries. So each sync does not overwrite the year but adds to
+ * the accumulated database: what has already dropped out of the feed stays with us.
  */
 
 type Viewing = {
@@ -55,7 +55,7 @@ export function parseRss(xml: string): Viewing[] {
     const item = chunk.split('</item>')[0];
     const watchedDate = tag(item, 'letterboxd:watchedDate');
     const title = tag(item, 'letterboxd:filmTitle');
-    // В ленту попадают ещё и списки, и отзывы без отметки о просмотре, они не про время.
+    // The feed also carries lists and reviews without a watched mark; those are not about time.
     if (!watchedDate || !title) continue;
 
     const guid = tag(item, 'guid');
@@ -84,13 +84,13 @@ function pickDirector(crew: Array<{ job?: string; name?: string }> | undefined):
   return names.join(', ');
 }
 
-/** Хронометраж и режиссёр из TMDB с вечным кэшем; без ключа пусто. */
+/** Runtime and director from TMDB with a permanent cache; empty without a key. */
 async function resolveFilm(tmdbId: number | null, title: string): Promise<FilmInfo> {
   const { tmdbApiKey } = config.sources.letterboxd;
   if (!tmdbId || !tmdbApiKey) return { runtimeMin: null, director: null };
 
   const cached = getCachedFilm(tmdbId);
-  // director === null значит колонку ещё не заполняли, доберём credits.
+  // director === null means the column has not been filled yet; fetch credits.
   if (cached && cached.director !== null) {
     return { runtimeMin: cached.runtimeMin, director: cached.director || null };
   }
@@ -109,7 +109,7 @@ async function resolveFilm(tmdbId: number | null, title: string): Promise<FilmIn
     cacheFilm(tmdbId, runtimeMin, movie.title ?? title, director);
     return { runtimeMin, director: director || null };
   } catch {
-    // Сеть или лимит TMDB не роняют синк, фильм получит оценочное время.
+    // Network or TMDB rate limits do not fail the sync; the movie gets an estimated time.
     return { runtimeMin: cached?.runtimeMin ?? null, director: null };
   }
 }
@@ -145,7 +145,7 @@ export const letterboxd: Source = {
 
     upsertEntries('letterboxd', rows);
 
-    // Старые записи вне RSS тоже получают режиссёра, иначе в журнале останется год.
+    // Old entries outside the RSS get a director too, otherwise the journal keeps showing the year.
     const stale = db
       .prepare(
         `SELECT external_id, day, seconds, title, subtitle, estimated, meta
@@ -188,7 +188,7 @@ export const letterboxd: Source = {
 
     rebuildDailyFromEntries('letterboxd', year);
 
-    // Топ считаем по всей накопленной базе за год, а не только по свежей ленте.
+    // The top is computed over the whole accumulated year, not just the fresh feed.
     const total = countEntries('letterboxd', year);
     replaceHighlights(
       'letterboxd',
@@ -200,13 +200,13 @@ export const letterboxd: Source = {
         .map((row) => ({ title: row.title, subtitle: row.subtitle, seconds: row.seconds })),
     );
 
-    const noKey = !tmdbApiKey ? ', без ключа TMDB' : '';
-    const estimateNote = estimatedCount ? `, оценка у ${estimatedCount}` : '';
+    const noKey = !tmdbApiKey ? ', no TMDB key' : '';
+    const estimateNote = estimatedCount ? `, estimated for ${estimatedCount}` : '';
 
     return {
       coversFrom: null,
       granularity: 'day',
-      summary: `в ленте ${viewings.length}, всего накоплено ${total}${estimateNote}${noKey}`,
+      summary: `${viewings.length} in feed, ${total} accumulated in total${estimateNote}${noKey}`,
     };
   },
 };

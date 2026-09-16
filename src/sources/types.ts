@@ -2,12 +2,12 @@ import type { Granularity } from '../db.ts';
 import type { SourceId } from '../config.ts';
 
 export type SyncResult = {
-  /** С какой даты у источника реально есть данные (для честной отметки о пробеле). */
+  /** From which date the source actually has data (for an honest note about the gap). */
   coversFrom?: string | null;
   granularity: Granularity;
-  /** Короткая строка в лог: что именно приехало. */
+  /** A short line for the log: what exactly arrived. */
   summary: string;
-  /** Оговорка о полноте данных, если она есть, показывается на экране. */
+  /** A data-completeness caveat, if any; shown on screen. */
   warning?: string | null;
 };
 

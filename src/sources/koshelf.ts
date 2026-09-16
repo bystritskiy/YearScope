@@ -19,7 +19,7 @@ export const koshelf: Source = {
   async sync(year: number): Promise<SyncResult> {
     const { baseUrl } = config.sources.koshelf;
 
-    // Спрашиваем, в каких месяцах вообще есть чтение, чтобы не дёргать пустые.
+    // Ask which months have any reading at all, so empty ones are not requested.
     const periods = await fetchJson<PeriodsResponse>(
       `${baseUrl}/api/reading/available-periods?source=reading_data&group_by=month`,
     );
@@ -30,7 +30,7 @@ export const koshelf: Source = {
     const secondsByDay = new Map<string, number>();
     const sessionsByDay = new Map<string, number>();
     const secondsByBook = new Map<string, { title: string; author: string | null; seconds: number }>();
-    // Чтение конкретной книги в конкретный день это строка журнала.
+    // Reading a specific book on a specific day is one journal row.
     const byBookAndDay = new Map<string, EntryRow>();
 
     for (const month of months) {
@@ -46,10 +46,10 @@ export const koshelf: Source = {
         sessionsByDay.set(event.start, (sessionsByDay.get(event.start) ?? 0) + 1);
 
         const item = items[event.item_ref];
-        const title = item?.title ?? 'Без названия';
+        const title = item?.title ?? 'Untitled';
         const author = item?.authors?.[0]?.replace(/\s+/g, ' ').trim() ?? null;
 
-        // Одну книгу можно читать несколькими заходами за день, поэтому суммируем.
+        // One book can be read in several sittings per day, so we sum.
         const entryKey = `${event.item_ref}|${event.start}`;
         const entry = byBookAndDay.get(entryKey);
         if (entry) {
@@ -95,7 +95,7 @@ export const koshelf: Source = {
     return {
       coversFrom: days[0]?.day ?? null,
       granularity: 'day',
-      summary: `${days.length} дней, ${Math.round(seconds / 3600)} ч, книг: ${secondsByBook.size}`,
+      summary: `${days.length} days, ${Math.round(seconds / 3600)} h, books: ${secondsByBook.size}`,
     };
   },
 };

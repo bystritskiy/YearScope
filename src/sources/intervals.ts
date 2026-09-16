@@ -4,10 +4,10 @@ import { rebuildDailyFromEntries, replaceHighlights, upsertEntries, type EntryRo
 import type { Source, SyncResult } from './types.ts';
 
 /**
- * Тренировки берутся из intervals.icu, а не из Garmin напрямую: туда они и так
- * прилетают с часов, а доступ несравнимо проще: HTTP Basic с персональным
- * ключом вместо пароля от аккаунта или партнёрской программы Garmin.
- * Весь год приезжает одним запросом.
+ * Workouts come from intervals.icu rather than Garmin directly: they land there
+ * from the watch anyway, and access is incomparably simpler: HTTP Basic with a
+ * personal key instead of an account password or Garmin's partner programme.
+ * The whole year arrives in one request.
  */
 
 type Activity = {
@@ -21,41 +21,41 @@ type Activity = {
   calories?: number | null;
 };
 
-/** Русские названия для типов, которые реально встречаются. */
+/** Human-readable names for the types that actually occur. */
 const TYPE_LABELS: Record<string, string> = {
-  Ride: 'Велосипед',
-  VirtualRide: 'Велостанок',
-  Run: 'Бег',
-  VirtualRun: 'Беговая дорожка',
-  TrailRun: 'Трейл',
-  Walk: 'Ходьба',
-  Hike: 'Поход',
-  Swim: 'Плавание',
-  WeightTraining: 'Силовая',
-  Workout: 'Тренировка',
-  Yoga: 'Йога',
-  Rowing: 'Гребля',
-  Elliptical: 'Эллипс',
-  Soccer: 'Футбол',
-  Tennis: 'Теннис',
-  AlpineSki: 'Горные лыжи',
-  NordicSki: 'Беговые лыжи',
-  Snowboard: 'Сноуборд',
-  Hockey: 'Хоккей',
+  Ride: 'Cycling',
+  VirtualRide: 'Indoor cycling',
+  Run: 'Running',
+  VirtualRun: 'Treadmill',
+  TrailRun: 'Trail running',
+  Walk: 'Walking',
+  Hike: 'Hiking',
+  Swim: 'Swimming',
+  WeightTraining: 'Strength',
+  Workout: 'Workout',
+  Yoga: 'Yoga',
+  Rowing: 'Rowing',
+  Elliptical: 'Elliptical',
+  Soccer: 'Soccer',
+  Tennis: 'Tennis',
+  AlpineSki: 'Alpine skiing',
+  NordicSki: 'Cross-country skiing',
+  Snowboard: 'Snowboarding',
+  Hockey: 'Hockey',
 };
 
 const label = (type: string | null | undefined): string =>
-  !type ? 'Прочее' : (TYPE_LABELS[type] ?? type);
+  !type ? 'Other' : (TYPE_LABELS[type] ?? type);
 
 export const intervals: Source = {
   id: 'intervals',
-  // Без ключа источник просто не подключён, на экране так и будет написано.
+  // Without a key the source is simply not connected, and the screen says so.
   enabled: Boolean(config.sources.intervals.apiKey),
 
   async sync(year: number): Promise<SyncResult> {
     const { apiKey, baseUrl, athleteId } = config.sources.intervals;
 
-    // Basic-авторизация: логин всегда литерал API_KEY, пароль это сам ключ.
+    // Basic auth: the login is always the literal API_KEY, the password is the key itself.
     const authorization = `Basic ${Buffer.from(`API_KEY:${apiKey}`).toString('base64')}`;
 
     const url =
@@ -74,8 +74,8 @@ export const intervals: Source = {
       const day = activity.start_date_local?.slice(0, 10);
       if (!day?.startsWith(`${year}-`)) continue;
 
-      // moving_time честнее для «сколько занимался», но у силовых и йоги
-      // он часто нулевой, тогда остаётся общая длительность.
+      // moving_time is more honest for "how long did I train", but for strength
+      // and yoga it is often zero, so the total duration remains.
       const moving = activity.moving_time ?? 0;
       const seconds = moving > 0 ? moving : (activity.elapsed_time ?? 0);
       if (seconds <= 0) continue;
@@ -99,7 +99,7 @@ export const intervals: Source = {
     upsertEntries('intervals', rows);
     rebuildDailyFromEntries('intervals', year);
 
-    // В топе интереснее виды спорта, а не отдельные тренировки.
+    // Sport types are more interesting in the top than individual workouts.
     replaceHighlights(
       'intervals',
       year,
@@ -114,7 +114,7 @@ export const intervals: Source = {
     return {
       coversFrom: null,
       granularity: 'day',
-      summary: `${rows.length} тренировок, ${Math.round(seconds / 3600)} ч, видов: ${byType.size}`,
+      summary: `${rows.length} workouts, ${Math.round(seconds / 3600)} h, types: ${byType.size}`,
     };
   },
 };

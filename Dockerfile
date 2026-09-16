@@ -1,7 +1,7 @@
 FROM node:26-alpine
 
-# Зависимостей нет: SQLite и разбор TypeScript встроены в Node 26,
-# поэтому ни npm install, ни шага сборки в образе не требуется.
+# No dependencies: SQLite and TypeScript stripping are built into Node 26,
+# so the image needs neither npm install nor a build step.
 
 WORKDIR /app
 

@@ -22,9 +22,9 @@ export type SourceSummary = {
   status: 'ok' | 'error' | 'never';
   message: string | null;
   lastRun: string | null;
-  /** С какой даты у источника есть данные. Если это не 1 января, показываем предупреждение. */
+  /** From which date the source has data. If it is not 1 January, a warning is shown. */
   coversFrom: string | null;
-  /** Оговорка о полноте данных от самого источника. */
+  /** A data-completeness caveat from the source itself. */
   warning: string | null;
   granularity: 'day' | 'month' | null;
   highlights: Array<{ title: string; subtitle: string | null; seconds: number; iconUrl: string | null }>;
@@ -32,7 +32,7 @@ export type SourceSummary = {
 
 export type Summary = {
   year: number;
-  /** Версия продукта из package.json: клиент показывает её в футере. */
+  /** Product version from package.json: the client shows it in the footer. */
   version: string;
   generatedAt: string;
   totalSeconds: number;
@@ -99,7 +99,7 @@ export function buildSummary(year = config.year): Summary {
 
 export type SourceDetail = {
   source: SourceSummary;
-  /** Полный рейтинг, а не только то, что помещается на карточку. */
+  /** The full ranking, not just what fits on the card. */
   ranking: Array<{ title: string; subtitle: string | null; seconds: number; iconUrl: string | null }>;
   journal: JournalDay[];
   months: Array<{ month: string; seconds: number }>;

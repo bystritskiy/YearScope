@@ -19,8 +19,8 @@ type FetchOptions = {
 };
 
 /**
- * Один общий фетчер на все источники: таймаут, повтор на сетевых сбоях и 5xx.
- * Повторять 4xx смысла нет: там ответ не изменится.
+ * One shared fetcher for all sources: timeout, retry on network failures and 5xx.
+ * Retrying 4xx is pointless: the answer will not change.
  */
 async function request(url: string, options: FetchOptions = {}): Promise<Response> {
   const { timeoutMs = 20_000, retries = 2, headers = {} } = options;

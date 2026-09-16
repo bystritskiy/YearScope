@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "Дашборд: сколько времени за год ушло на игры, сериалы, кино, книги и тренировки",
+  "description": "Dashboard: how much of the year went to games, TV shows, movies, books and workouts",
   "engines": {
     "node": ">=24"
   },

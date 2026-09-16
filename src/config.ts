@@ -3,9 +3,9 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 /**
- * Всё настраивается через переменные окружения. Значений по умолчанию хватает,
- * чтобы сервис поднялся без .env, но источники тогда либо выключены,
- * либо ходят в пустоту: свои ники и адреса нужно указать явно.
+ * Everything is configured via environment variables. The defaults are enough
+ * for the service to start without .env, but sources are then either off or
+ * talk to nowhere: your own nicknames and addresses must be set explicitly.
  */
 
 function env(name: string, fallback: string): string {
@@ -18,7 +18,7 @@ function envInt(name: string, fallback: number): number {
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
-/** Версия продукта берётся из одного места: package.json. Показывается в футере. */
+/** The product version comes from one place: package.json. Shown in the footer. */
 function appVersion(): string {
   try {
     const root = dirname(dirname(fileURLToPath(import.meta.url)));
@@ -30,19 +30,19 @@ function appVersion(): string {
 }
 
 /**
- * Демо-режим: база заполняется вымышленным годом, сеть не трогается вовсе.
- * Нужен для скриншотов и для того, чтобы проект можно было запустить и
- * посмотреть, не заводя аккаунты в пяти сервисах.
+ * Demo mode: the database is filled with a fictional year, the network is never touched.
+ * Exists for screenshots and so the project can be started and looked at
+ * without creating accounts on five services.
  */
 const demo = process.argv.includes('--demo') || env('YEARSCOPE_DEMO', 'false') === 'true';
 
-/** Демо-данные живут отдельно, чтобы не затереть настоящую базу. */
+/** Demo data lives separately so it never overwrites the real database. */
 const dataDir = env('DATA_DIR', join(process.cwd(), demo ? 'data/demo' : 'data'));
 
 /**
- * Источник включён, только если выключатель не сняли И известно, откуда брать
- * данные. Иначе пустой ник молча превратился бы в запрос в никуда и красную
- * ошибку на экране. Лучше честно показать «не настроен».
+ * A source is on only if the switch is not off AND we know where to get the
+ * data from. Otherwise an empty nickname would silently become a request to
+ * nowhere and a red error on screen. Better to honestly show "not configured".
  */
 const on = (flag: string, ...required: string[]): boolean =>
   env(flag, 'true') !== 'false' && required.every((value) => value !== '');
@@ -58,17 +58,17 @@ export const config = {
   port: envInt('PORT', 3010),
   dataDir,
 
-  /** Год, за который считаем сводку. */
+  /** The year the summary is computed for. */
   year: envInt('YEARSCOPE_YEAR', new Date().getUTCFullYear()),
 
   /**
-   * Как часто фоновая синхронизация опрашивает источники. Раз в сутки:
-   * данные за год от лишних опросов не меняются, а источники лучше не дёргать.
-   * Отсчёт идёт от старта сервиса, а не от полуночи.
+   * How often background sync polls the sources. Once a day: the year's data
+   * does not change from extra polling, and the sources are better left alone.
+   * Counted from service start, not from midnight.
    */
   syncIntervalMinutes: envInt('SYNC_INTERVAL_MINUTES', 1440),
 
-  /** Синхронизировать сразу при старте сервиса. */
+  /** Sync right away on service start. */
   syncOnBoot: env('SYNC_ON_BOOT', 'true') !== 'false',
 
   sources: {
@@ -86,21 +86,21 @@ export const config = {
       apiUrl: env('MYSHOWS_API_URL', 'https://api.myshows.me/v2/rpc/'),
       login: myshowsLogin,
       /**
-       * История берётся из выгрузки профиля (лежит в data/imports),
-       * потому что публичный API отдаёт лишь 25 последних отметок.
+       * History comes from a profile export (lives in data/imports),
+       * because the public API only returns the last 25 check-ins.
        */
       importDir: env('MYSHOWS_IMPORT_DIR', join(dataDir, 'imports')),
       fallbackEpisodeMinutes: envInt('MYSHOWS_FALLBACK_EPISODE_MINUTES', 45),
     },
     intervals: {
       /**
-       * Ключ берётся на intervals.icu → Settings → Developer Settings.
-       * Без него источник просто выключен: тренировки прилетают в intervals.icu
-       * из Garmin сами, поэтому отдельный коннектор к Garmin не нужен.
+       * The key comes from intervals.icu → Settings → Developer Settings.
+       * Without it the source is simply off: workouts land in intervals.icu
+       * from Garmin on their own, so a separate Garmin connector is not needed.
        */
       apiKey: env('INTERVALS_API_KEY', ''),
       baseUrl: env('INTERVALS_BASE_URL', 'https://intervals.icu'),
-      /** 0 означает «текущий атлет», то есть владелец ключа. */
+      /** 0 means "the current athlete", i.e. the key's owner. */
       athleteId: env('INTERVALS_ATHLETE_ID', '0'),
     },
     letterboxd: {
@@ -108,8 +108,8 @@ export const config = {
       baseUrl: env('LETTERBOXD_BASE_URL', 'https://letterboxd.com'),
       user: letterboxdUser,
       /**
-       * Ключ TMDB опционален. Без него хронометраж фильмов берётся как средняя
-       * величина и помечается в интерфейсе как оценка.
+       * The TMDB key is optional. Without it movie runtime is taken as an
+       * average and marked in the interface as an estimate.
        */
       tmdbApiKey: env('TMDB_API_KEY', ''),
       fallbackRuntimeMinutes: envInt('LETTERBOXD_FALLBACK_RUNTIME_MINUTES', 115),
@@ -119,13 +119,13 @@ export const config = {
 
 export type SourceId = 'gowithme' | 'myshows' | 'letterboxd' | 'koshelf' | 'intervals';
 
-/** Порядок и подписи активностей на экране сводки. */
+/** Order and labels of activities on the summary screen. */
 export const SOURCE_META: Record<SourceId, { label: string; icon: string; accent: string }> = {
-  gowithme: { label: 'Игры', icon: '🎮', accent: '#7c5cff' },
-  myshows: { label: 'Сериалы', icon: '📺', accent: '#31b0d5' },
-  letterboxd: { label: 'Кино', icon: '🎬', accent: '#40bf6a' },
-  koshelf: { label: 'Книги', icon: '📚', accent: '#e0913a' },
-  intervals: { label: 'Тренировки', icon: '🏃', accent: '#e05a8a' },
+  gowithme: { label: 'Games', icon: '🎮', accent: '#7c5cff' },
+  myshows: { label: 'TV shows', icon: '📺', accent: '#31b0d5' },
+  letterboxd: { label: 'Movies', icon: '🎬', accent: '#40bf6a' },
+  koshelf: { label: 'Books', icon: '📚', accent: '#e0913a' },
+  intervals: { label: 'Workouts', icon: '🏃', accent: '#e05a8a' },
 };
 
 export const SOURCE_ORDER: SourceId[] = ['gowithme', 'myshows', 'letterboxd', 'koshelf', 'intervals'];

@@ -4,9 +4,9 @@ data/
 .DS_Store
 *.log
 
-# Личные инфраструктурные скиллы: доступы к домашнему NAS, не для публикации.
+# Personal infrastructure skills: access to the home NAS, not for publishing.
 .agents/
 
-# Локальные конфиги агентов, не часть продукта.
+# Local agent configs, not part of the product.
 .claude/
 .impeccable/

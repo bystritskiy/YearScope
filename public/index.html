@@ -1,18 +1,18 @@
 <!doctype html>
-<html lang="ru">
+<html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#0b0e14" />
     <meta
       name="description"
-      content="Личный дашборд: сколько времени за год ушло на игры, сериалы, кино, книги и тренировки"
+      content="A personal dashboard: how much of the year went to games, TV shows, movies, books and workouts"
     />
     <title>YearScope</title>
     <meta property="og:title" content="YearScope" />
     <meta
       property="og:description"
-      content="Личный дашборд: сколько времени за год ушло на игры, сериалы, кино, книги и тренировки"
+      content="A personal dashboard: how much of the year went to games, TV shows, movies, books and workouts"
     />
     <meta property="og:image" content="/logo.svg" />
     <meta property="og:type" content="website" />
@@ -24,43 +24,43 @@
   <body id="top">
     <header class="site">
       <div class="site__inner">
-        <a class="brand" href="#/summary" title="К сводке">
+        <a class="brand" href="#/summary" title="To summary">
           <img class="brand__logo" src="/logo-mark.svg" width="24" height="24" alt="" aria-hidden="true" />
           <span class="brand__name">YearScope</span>
         </a>
-        <nav class="tabs" id="tabs" aria-label="Разделы">
-          <button type="button" class="tab tab--active" data-view="summary">Сводка</button>
-          <button type="button" class="tab" data-view="journal">Журнал</button>
+        <nav class="tabs" id="tabs" aria-label="Sections">
+          <button type="button" class="tab tab--active" data-view="summary">Summary</button>
+          <button type="button" class="tab" data-view="journal">Journal</button>
           <span class="tabs__sep" aria-hidden="true"></span>
           <span class="tabs__sources" id="source-nav"></span>
         </nav>
         <div class="top__actions">
           <div class="export" id="export">
             <button type="button" class="btn" id="export-toggle" aria-expanded="false" aria-haspopup="true">
-              Экспорт
+              Export
             </button>
             <div class="export__menu" id="export-menu" hidden>
-              <a class="export__item" data-export="json" href="/api/export?format=json">JSON: всё за год</a>
-              <a class="export__item" data-export="csv" href="/api/export?format=csv">CSV: журнал</a>
+              <a class="export__item" data-export="json" href="/api/export?format=json">JSON: full year</a>
+              <a class="export__item" data-export="csv" href="/api/export?format=csv">CSV: journal</a>
             </div>
           </div>
-          <button type="button" id="sync" class="btn">Обновить</button>
+          <button type="button" id="sync" class="btn">Refresh</button>
         </div>
       </div>
     </header>
 
     <main class="shell">
       <div class="pagehead" id="pagehead">
-        <h1 class="pagehead__title" id="page-title">Сводка</h1>
-        <p class="top__sub" id="subtitle">загружаю…</p>
+        <h1 class="pagehead__title" id="page-title">Summary</h1>
+        <p class="top__sub" id="subtitle">loading…</p>
       </div>
 
-      <!-- Сводка -->
+      <!-- Summary -->
       <section class="view" id="view-summary">
         <div class="total" id="total" hidden>
           <div class="total__value">
             <span class="total__hours" id="total-hours">…</span>
-            <span class="total__unit">часов за год</span>
+            <span class="total__unit">hours this year</span>
           </div>
           <div class="total__meta" id="total-meta"></div>
           <div class="bar" id="total-bar"></div>
@@ -69,28 +69,28 @@
         <div class="cards" id="cards"></div>
 
         <div class="panel" id="chart-panel" hidden>
-          <h2 class="panel__title">По месяцам</h2>
+          <h2 class="panel__title">By month</h2>
           <div class="legend" id="chart-legend"></div>
           <div class="chart" id="chart"></div>
         </div>
       </section>
 
-      <!-- Журнал -->
+      <!-- Journal -->
       <section class="view" id="view-journal" hidden>
         <div class="filters" id="journal-filters"></div>
         <div class="feed" id="journal-feed"></div>
       </section>
 
-      <!-- Один источник -->
+      <!-- Single source -->
       <section class="view" id="view-source" hidden>
-        <button type="button" class="back" id="source-back">← к сводке</button>
+        <button type="button" class="back" id="source-back">← back to summary</button>
         <div class="detail" id="source-head"></div>
         <div class="panel">
-          <h2 class="panel__title" id="ranking-title">Всё за год</h2>
+          <h2 class="panel__title" id="ranking-title">Everything this year</h2>
           <ol class="ranking" id="source-ranking"></ol>
         </div>
         <div class="panel">
-          <h2 class="panel__title">Лента</h2>
+          <h2 class="panel__title">Feed</h2>
           <div class="feed" id="source-feed"></div>
         </div>
       </section>
@@ -101,22 +101,22 @@
         <div class="footer__col">
           <div class="footer__brand"><img src="/logo-mark.svg" width="18" height="18" alt="" aria-hidden="true" /> YearScope <span class="footer__version" id="footer-version"></span></div>
           <p class="footer__text">
-            Личный дашборд времени: игры, сериалы, кино, книги и тренировки. Всё за год на одном экране.
+            A personal time dashboard: games, TV shows, movies, books and workouts. The whole year on one screen.
           </p>
           <p class="footer__total" id="footer-total"></p>
         </div>
         <div class="footer__col">
-          <h3 class="footer__title">Данные</h3>
-          <a class="footer__link" data-export="json" href="/api/export?format=json">Скачать JSON: всё за год</a>
-          <a class="footer__link" data-export="csv" href="/api/export?format=csv">Скачать CSV: журнал</a>
+          <h3 class="footer__title">Data</h3>
+          <a class="footer__link" data-export="json" href="/api/export?format=json">Download JSON: full year</a>
+          <a class="footer__link" data-export="csv" href="/api/export?format=csv">Download CSV: journal</a>
           <button type="button" class="footer__link footer__link--btn" id="footer-sync">
-            Обновить данные
+            Refresh data
           </button>
         </div>
       </div>
     </footer>
 
-    <button type="button" class="to-top" id="to-top" aria-label="Наверх" hidden>↑</button>
+    <button type="button" class="to-top" id="to-top" aria-label="Back to top" hidden>↑</button>
 
     <script src="/app.js" type="module"></script>
   </body>

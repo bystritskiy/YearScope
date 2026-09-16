@@ -36,7 +36,7 @@ body {
   gap: 20px;
 }
 
-/* --- липкая шапка сайта --- */
+/* --- sticky site header --- */
 
 .site {
   position: sticky;
@@ -112,7 +112,7 @@ body {
   display: none;
 }
 
-/* Пока пилюли источников не построились, прячем и разделитель перед ними. */
+/* Until the source pills are built, hide the divider before them too. */
 .tabs__sep:has(+ .tabs__sources:empty) {
   display: none;
 }
@@ -137,7 +137,7 @@ body {
   flex-shrink: 0;
 }
 
-/* --- заголовок страницы --- */
+/* --- page title --- */
 
 .pagehead {
   display: flex;
@@ -152,7 +152,7 @@ body {
   letter-spacing: -0.02em;
 }
 
-/* --- шапка --- */
+/* --- header --- */
 
 .top {
   display: flex;
@@ -162,7 +162,7 @@ body {
   flex-wrap: wrap;
 }
 
-/* Заголовок страницы стилизуется через .pagehead__title ниже. */
+/* The page title is styled via .pagehead__title below. */
 
 .top__sub {
   margin: 2px 0 0;
@@ -235,7 +235,7 @@ body {
   background: #1c2330;
 }
 
-/* Видимый фокус у всей интерактивности берётся из палитры, а не из браузерного дефолта. */
+/* Visible focus for everything interactive comes from the palette, not the browser default. */
 .btn:focus-visible,
 .tab:focus-visible,
 .chip:focus-visible,
@@ -247,7 +247,7 @@ body {
   outline-offset: 2px;
 }
 
-/* --- вкладки и экраны --- */
+/* --- tabs and views --- */
 
 .tabs {
   display: flex;
@@ -287,7 +287,7 @@ body {
   display: none;
 }
 
-/* Grid/flex-элементы не распирают вьюпорт: длинные nowrap-строки внутри обрезаются, а не выдавливают. */
+/* Grid/flex items never stretch the viewport: long nowrap strings inside get clipped rather than pushing out. */
 .card,
 .day,
 .detail,
@@ -317,7 +317,7 @@ body {
   color: var(--text);
 }
 
-/* --- общий итог --- */
+/* --- overall total --- */
 
 .total {
   background: var(--bg-raised);
@@ -354,7 +354,7 @@ body {
   font-size: 13px;
 }
 
-/* Единая полоса-доля: сразу видно соотношение активностей. */
+/* A single share bar: the ratio between activities is visible at a glance. */
 .bar {
   display: flex;
   height: 10px;
@@ -368,7 +368,7 @@ body {
   transition: flex-grow 0.4s ease;
 }
 
-/* --- карточки активностей --- */
+/* --- activity cards --- */
 
 .cards {
   display: grid;
@@ -503,7 +503,7 @@ body {
   text-decoration: underline;
 }
 
-/* Единственный авторский момент движения: карточки собираются каскадом сверху вниз. */
+/* The only authored moment of motion: cards cascade in from top to bottom. */
 @media (prefers-reduced-motion: no-preference) {
   .card {
     animation: rise 0.5s cubic-bezier(0.16, 1, 0.3, 1) backwards;
@@ -517,7 +517,7 @@ body {
   }
 }
 
-/* --- график --- */
+/* --- chart --- */
 
 .panel {
   background: var(--bg-raised);
@@ -533,7 +533,7 @@ body {
   color: var(--text-dim);
 }
 
-/* Легенда графика: какой цвет какому источнику, те же пять hex, что и везде. */
+/* Chart legend: which colour is which source, the same five hex values as everywhere else. */
 .legend {
   display: flex;
   flex-wrap: wrap;
@@ -607,7 +607,7 @@ body {
   background: #1a2029;
 }
 
-/* --- лента активностей --- */
+/* --- activity feed --- */
 
 .filters {
   display: flex;
@@ -733,7 +733,7 @@ body {
   flex-shrink: 0;
 }
 
-/* --- карточка одного источника --- */
+/* --- single source card --- */
 
 .detail {
   background: var(--bg-raised);
@@ -852,7 +852,7 @@ body {
   }
 }
 
-/* --- футер --- */
+/* --- footer --- */
 
 .footer {
   border-top: 1px solid var(--line);
@@ -938,7 +938,7 @@ body {
   color: var(--text);
 }
 
-/* --- кнопка «наверх» --- */
+/* --- "back to top" button --- */
 
 .to-top {
   position: fixed;

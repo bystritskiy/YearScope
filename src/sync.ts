@@ -15,7 +15,7 @@ async function syncOne(source: (typeof sources)[number], year: number): Promise<
   const startedAt = Date.now();
 
   if (!source.enabled) {
-    return { source: source.id, status: 'skipped', message: 'выключен в конфиге', durationMs: 0 };
+    return { source: source.id, status: 'skipped', message: 'disabled in config', durationMs: 0 };
   }
 
   try {
@@ -40,8 +40,8 @@ async function syncOne(source: (typeof sources)[number], year: number): Promise<
 }
 
 /**
- * Один источник не должен ронять остальные: каждый ловит свою ошибку сам,
- * а параллельный запуск нужен, чтобы медленный TMDB не задерживал локальный KoShelf.
+ * One source must not take the others down: each catches its own error,
+ * and they run in parallel so a slow TMDB does not hold up the local KoShelf.
  */
 export function runSync(year = config.year): Promise<SyncReport[]> {
   if (running) return running;
@@ -63,12 +63,12 @@ export function startScheduler(): void {
 
   const timer = setInterval(() => {
     runSync().then(
-      (reports) => logReports('плановая синхронизация', reports),
-      (error) => console.error('[sync] сбой планировщика:', error),
+      (reports) => logReports('scheduled sync', reports),
+      (error) => console.error('[sync] scheduler failure:', error),
     );
   }, intervalMs);
 
-  // Планировщик не должен удерживать процесс при остановке контейнера.
+  // The scheduler must not keep the process alive when the container stops.
   timer.unref();
 }
 

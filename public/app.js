@@ -1,4 +1,4 @@
-const MONTH_LABELS = ['янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
+const MONTH_LABELS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 const el = {
   subtitle: document.getElementById('subtitle'),
@@ -35,27 +35,21 @@ const el = {
   },
 };
 
-/** Последняя загруженная сводка: из неё берутся иконки и цвета для ленты. */
+/** The last loaded summary: icons and colours for the feed come from it. */
 let summaryData = null;
 let journalFilter = null;
-/** Текущий экран, чтобы роутер по хешу не дёргал fetch по кругу. */
+/** The current view, so the hash router does not re-fetch in a loop. */
 let currentView = 'summary';
 let currentSource = null;
-/** Базовый заголовок вкладки («YearScope 2026: 692 ч»), экраны его дополняют. */
+/** Base tab title ("YearScope 2026: 692 h"); views append to it. */
 let baseTitle = 'YearScope';
 
 const hours = (seconds) => seconds / 3600;
 
-/** «1 час», «2 часа», «5 часов»: иначе цифры читаются как машинный вывод. */
+/** "1 hour", "2 hours": otherwise the numbers read like machine output. */
 function pluralHours(value) {
-  // Дробные («1,4 часа») всегда идут в родительном единственного, целые по классическому правилу.
-  if (!Number.isInteger(Math.round(value * 10) / 10)) return 'часа';
-  const rounded = Math.round(value);
-  const mod10 = rounded % 10;
-  const mod100 = rounded % 100;
-  if (mod10 === 1 && mod100 !== 11) return 'час';
-  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return 'часа';
-  return 'часов';
+  // Only an exact 1 is singular; fractions ("1.4 hours") and everything else are plural.
+  return Math.round(value * 10) / 10 === 1 ? 'hour' : 'hours';
 }
 
 function formatHours(seconds) {
@@ -65,17 +59,17 @@ function formatHours(seconds) {
   return String(Math.round(value));
 }
 
-/** 293917 сек → «81 ч 38 мин»: для подписей, где округление до часов теряет смысл. */
+/** 293917 s → "81 h 38 min": for labels where rounding to hours loses the point. */
 function formatExact(seconds) {
   const h = Math.floor(seconds / 3600);
   const m = Math.round((seconds % 3600) / 60);
-  if (h === 0) return `${m} мин`;
-  return m === 0 ? `${h} ч` : `${h} ч ${m} мин`;
+  if (h === 0) return `${m} min`;
+  return m === 0 ? `${h} h` : `${h} h ${m} min`;
 }
 
 function formatDate(iso) {
   if (!iso) return null;
-  return new Date(iso).toLocaleString('ru-RU', {
+  return new Date(iso).toLocaleString('en-US', {
     day: 'numeric',
     month: 'short',
     hour: '2-digit',
@@ -85,11 +79,11 @@ function formatDate(iso) {
 
 function formatDay(iso) {
   if (!iso) return null;
-  return new Date(`${iso}T00:00:00`).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' });
+  return new Date(`${iso}T00:00:00`).toLocaleDateString('en-US', { day: 'numeric', month: 'long' });
 }
 
 function weekdayOf(iso) {
-  return new Date(`${iso}T00:00:00`).toLocaleDateString('ru-RU', { weekday: 'long' });
+  return new Date(`${iso}T00:00:00`).toLocaleDateString('en-US', { weekday: 'long' });
 }
 
 function node(tag, className, text) {
@@ -106,10 +100,10 @@ const metaOf = (sourceId) =>
     accent: '#555',
   };
 
-/* --- переключение экранов --- */
+/* --- switching views --- */
 
 function updateTabs() {
-  // Вкладка «Сводка» остаётся подсвеченной на экране источника: он её продолжение.
+  // The Summary tab stays highlighted on the source view: it is a continuation of it.
   const activeTab = currentView === 'journal' ? 'journal' : 'summary';
   for (const tab of el.tabs.querySelectorAll('.tab')) {
     const isSource = tab.dataset.source !== undefined;
@@ -120,8 +114,8 @@ function updateTabs() {
   }
 }
 
-/** Экраны живут в хеше (#/summary, #/journal, #/source/myshows): работают кнопки
- *  браузера «назад/вперёд», а ссылкой можно поделиться. */
+/** Views live in the hash (#/summary, #/journal, #/source/myshows): the browser's
+ *  back/forward buttons work, and a link can be shared. */
 function showView(name, sourceId = null) {
   currentView = name;
   currentSource = sourceId;
@@ -129,7 +123,7 @@ function showView(name, sourceId = null) {
   updateTabs();
 
   if (name !== 'source') {
-    el.pageTitle.textContent = name === 'journal' ? 'Журнал' : 'Сводка';
+    el.pageTitle.textContent = name === 'journal' ? 'Journal' : 'Summary';
     document.title = baseTitle;
   }
 
@@ -156,12 +150,12 @@ function route() {
   } else if (hash === '#/summary' || hash === '') {
     if (currentView !== 'summary') showView('summary');
   }
-  // Остальное (например, #top у кнопки «Наверх») это обычные якоря, не экраны.
+  // Anything else (e.g. #top from the back-to-top button) is a plain anchor, not a view.
 }
 
 window.addEventListener('hashchange', route);
 
-/* --- сводка --- */
+/* --- summary --- */
 
 function renderTotal(data) {
   const active = data.sources.filter((source) => source.seconds > 0);
@@ -169,13 +163,13 @@ function renderTotal(data) {
   el.total.hidden = false;
   el.totalHours.textContent = formatHours(data.totalSeconds);
   el.total.querySelector('.total__unit').textContent =
-    `${pluralHours(hours(data.totalSeconds))} за ${data.year} год`;
+    `${pluralHours(hours(data.totalSeconds))} in ${data.year}`;
 
   const days = (data.totalSeconds / 86400).toFixed(1);
   el.totalMeta.textContent =
     active.length > 0
-      ? `${formatExact(data.totalSeconds)}, это ${days} суток непрерывно, по ${active.length} активностям`
-      : 'данных пока нет';
+      ? `${formatExact(data.totalSeconds)}, that is ${days} days nonstop, across ${active.length} activities`
+      : 'no data yet';
 
   el.totalBar.replaceChildren(
     ...active.map((source) => {
@@ -189,24 +183,24 @@ function renderTotal(data) {
   el.totalBar.setAttribute('role', 'img');
   el.totalBar.setAttribute(
     'aria-label',
-    `доли активностей: ${active.map((source) => `${source.label} ${Math.round(source.share * 100)}%`).join(', ')}`,
+    `activity shares: ${active.map((source) => `${source.label} ${Math.round(source.share * 100)}%`).join(', ')}`,
   );
 }
 
 function renderCard(source, index = 0) {
   const card = node('article', 'card');
   card.style.setProperty('--accent', source.accent);
-  // Каскад появления это единственный авторский момент движения: список собирается сверху вниз.
+  // The entrance cascade is the only authored moment of motion: the list assembles top to bottom.
   card.style.animationDelay = `${Math.min(index * 60, 300)}ms`;
   if (source.seconds === 0) card.classList.add('card--empty');
 
-  // Кликабельны только карточки, внутри которых есть что показать.
+  // Only cards with something to show inside are clickable.
   if (source.seconds > 0) {
     card.classList.add('card--link');
     card.tabIndex = 0;
     card.setAttribute('role', 'button');
-    card.setAttribute('aria-label', `${source.label}: ${formatExact(source.seconds)}, открыть всё за год`);
-    card.title = `${source.label}: открыть всё за год`;
+    card.setAttribute('aria-label', `${source.label}: ${formatExact(source.seconds)}, open the full year`);
+    card.title = `${source.label}: open the full year`;
     const open = () => openSource(source.id);
     card.addEventListener('click', open);
     card.addEventListener('keydown', (event) => {
@@ -229,16 +223,16 @@ function renderCard(source, index = 0) {
   card.append(value);
 
   if (!source.configured) {
-    card.append(node('div', 'card__note', 'источник ещё не подключён'));
+    card.append(node('div', 'card__note', 'source not connected yet'));
     return card;
   }
 
   if (source.status === 'error') {
-    card.append(node('div', 'card__note card__note--error', `ошибка: ${source.message ?? 'без описания'}`));
+    card.append(node('div', 'card__note card__note--error', `error: ${source.message ?? 'no details'}`));
     return card;
   }
 
-  card.append(node('div', 'card__share', `${Math.round(source.share * 100)}% времени`));
+  card.append(node('div', 'card__share', `${Math.round(source.share * 100)}% of the time`));
 
   if (source.highlights.length > 0) {
     const list = node('ul', 'card__top');
@@ -251,16 +245,16 @@ function renderCard(source, index = 0) {
     card.append(list);
   }
 
-  // Честность про данные важнее красивой цифры: если источник знает только
-  // половину года, это написано прямо на карточке, а не подразумевается.
+  // Honesty about the data beats a pretty number: if a source only knows
+  // half the year, that is written right on the card, not implied.
   const caveat =
     source.coversFrom && source.coversFrom > `${summaryData?.year ?? source.coversFrom.slice(0, 4)}-01-02`
-      ? `только с ${formatDay(source.coversFrom)}`
+      ? `only since ${formatDay(source.coversFrom)}`
       : source.warning;
   if (caveat) card.append(node('div', 'card__note', caveat));
 
-  // Постоянный affordance: кликабельность видна без ховера и тултипа.
-  if (source.seconds > 0) card.append(node('div', 'card__more', 'Открыть всё за год →'));
+  // A permanent affordance: clickability is visible without hover or tooltip.
+  if (source.seconds > 0) card.append(node('div', 'card__more', 'Open the full year →'));
 
   return card;
 }
@@ -290,7 +284,7 @@ function renderChart(data) {
       column.append(node('div', 'col__value', month.total > 0 ? formatHours(month.total) : ''));
 
       const stack = node('div', 'col__stack');
-      // Высота столбца это доля от самого нагруженного месяца; 150px под самый высокий.
+      // Column height is a share of the busiest month; 150px for the tallest.
       stack.style.height = `${Math.max((month.total / max) * 150, month.total > 0 ? 3 : 4)}px`;
 
       for (const [sourceId, seconds] of Object.entries(month.bySource)) {
@@ -304,7 +298,7 @@ function renderChart(data) {
 
       column.append(stack, node('div', 'col__label', MONTH_LABELS[index]));
       column.title = month.total > 0 ? `${MONTH_LABELS[index]}: ${formatExact(month.total)}` : '';
-      // Столбец читается без ховера: роль, подпись и легенда выше заменяют одни тултипы.
+      // The column reads without hover: role, label and the legend above replace tooltips alone.
       const parts = Object.entries(month.bySource)
         .filter(([, seconds]) => seconds > 0)
         .map(([sourceId, seconds]) => `${byId.get(sourceId)?.label ?? sourceId} ${formatExact(seconds)}`);
@@ -312,48 +306,48 @@ function renderChart(data) {
       column.setAttribute(
         'aria-label',
         month.total > 0
-          ? `${MONTH_LABELS[index]}: ${formatExact(month.total)}, из них ${parts.join(', ')}`
-          : `${MONTH_LABELS[index]}: нет данных`,
+          ? `${MONTH_LABELS[index]}: ${formatExact(month.total)}, of which ${parts.join(', ')}`
+          : `${MONTH_LABELS[index]}: no data`,
       );
       return column;
     }),
   );
 }
 
-/* --- лента --- */
+/* --- feed --- */
 
-/** Заголовок события: действие + имя; в подзаголовке контекст (сериал, площадка, год). */
+/** Event title: action + name; the subtitle carries context (show, platform, year). */
 function eventCopy(item) {
   if (item.kind === 'day') {
-    return { title: `${metaOf(item.source).label} за день`, subtitle: item.subtitle };
+    return { title: `${metaOf(item.source).label}, daily total`, subtitle: item.subtitle };
   }
 
   switch (item.source) {
     case 'myshows':
-      // title это серия, subtitle это название сериала
+      // title is the episode, subtitle is the show name
       return {
-        title: item.title ? `Смотрел серию «${item.title}»` : 'Смотрел серию',
-        subtitle: item.subtitle ? `Сериал ${item.subtitle}` : null,
+        title: item.title ? `Watched episode "${item.title}"` : 'Watched an episode',
+        subtitle: item.subtitle ? `Show: ${item.subtitle}` : null,
       };
     case 'gowithme':
       return {
-        title: `Играл в «${item.title}»`,
-        subtitle: item.subtitle ? `Платформа ${item.subtitle}` : null,
+        title: `Played "${item.title}"`,
+        subtitle: item.subtitle ? `Platform: ${item.subtitle}` : null,
       };
     case 'letterboxd':
       return {
-        title: `Смотрел фильм «${item.title}»`,
-        // Год оставляем как есть, пока режиссёр ещё не подтянут из TMDB.
+        title: `Watched "${item.title}"`,
+        // The year stays as is until the director has been fetched from TMDB.
         subtitle: item.subtitle
           ? /^\d{4}$/.test(item.subtitle)
             ? item.subtitle
-            : `Режиссёр ${item.subtitle}`
+            : `Directed by ${item.subtitle}`
           : null,
       };
     case 'koshelf':
       return {
-        title: `Читал «${item.title}»`,
-        subtitle: item.subtitle ? `Автор ${item.subtitle}` : null,
+        title: `Read "${item.title}"`,
+        subtitle: item.subtitle ? `By ${item.subtitle}` : null,
       };
     case 'intervals':
       return { title: item.title, subtitle: item.subtitle };
@@ -377,7 +371,7 @@ function renderEvent(item) {
   row.append(body);
 
   const time = node('span', 'event__time', formatExact(item.seconds));
-  if (item.estimated) time.title = 'время посчитано оценкой';
+  if (item.estimated) time.title = 'estimated time';
   row.append(time);
 
   return row;
@@ -385,7 +379,7 @@ function renderEvent(item) {
 
 function renderFeed(container, days) {
   if (days.length === 0) {
-    container.replaceChildren(node('div', 'feed__empty', 'за этот год событий нет'));
+    container.replaceChildren(node('div', 'feed__empty', 'no events this year'));
     return;
   }
 
@@ -409,7 +403,7 @@ function renderFeed(container, days) {
 }
 
 function renderJournalFilters() {
-  const chips = [{ id: null, label: 'Всё', accent: '#2a3240' }];
+  const chips = [{ id: null, label: 'All', accent: '#2a3240' }];
   for (const source of summaryData?.sources ?? []) {
     if (source.seconds > 0) chips.push({ id: source.id, label: source.label, accent: source.accent });
   }
@@ -436,10 +430,10 @@ async function loadJournal() {
   renderFeed(el.journalFeed, data.days);
 }
 
-/* --- экран одного источника --- */
+/* --- single source view --- */
 
 async function openSource(id) {
-  // Состояние ставим сразу, до fetch: иначе обработчик hashchange устроит повторный заход.
+  // Set the state right away, before the fetch: otherwise the hashchange handler re-enters.
   currentView = 'source';
   currentSource = id;
   updateTabs();
@@ -469,12 +463,12 @@ async function openSource(id) {
     node(
       'div',
       'detail__meta',
-      `${formatExact(source.seconds)}, ${Math.round(source.share * 100)}% всего времени · ${activeDays} активных дней`,
+      `${formatExact(source.seconds)}, ${Math.round(source.share * 100)}% of all time · ${activeDays} active days`,
     ),
   );
 
   const max = detail.ranking[0]?.seconds ?? 1;
-  el.rankingTitle.textContent = `Всё за год: ${detail.ranking.length}`;
+  el.rankingTitle.textContent = `Everything this year: ${detail.ranking.length}`;
   el.sourceRanking.replaceChildren(
     ...detail.ranking.map((item) => {
       const row = document.createElement('li');
@@ -482,7 +476,7 @@ async function openSource(id) {
       if (item.subtitle) title.append(node('span', 'ranking__sub', ` · ${item.subtitle}`));
       row.append(title, node('span', 'ranking__time', formatExact(item.seconds)));
 
-      // Полоска показывает вес позиции относительно первой строки.
+      // The bar shows the row's weight relative to the first row.
       const bar = node('div', 'ranking__bar');
       bar.style.width = `${Math.max((item.seconds / max) * 100, 1)}%`;
       bar.style.background = source.accent;
@@ -497,7 +491,7 @@ async function openSource(id) {
   showView('source', source.id);
 }
 
-/* --- шапка: быстрые ссылки на источники --- */
+/* --- header: quick links to sources --- */
 
 function renderSourceNav() {
   const items = (summaryData?.sources ?? []).filter((source) => source.seconds > 0);
@@ -510,7 +504,7 @@ function renderSourceNav() {
       dot.setAttribute('aria-hidden', 'true');
       button.append(dot, document.createTextNode(source.label));
       button.dataset.source = source.id;
-      button.title = `${source.label}: открыть всё за год`;
+      button.title = `${source.label}: open the full year`;
       button.addEventListener('click', () => openSource(source.id));
       return button;
     }),
@@ -518,21 +512,21 @@ function renderSourceNav() {
   updateTabs();
 }
 
-/* --- футер --- */
+/* --- footer --- */
 
 function renderFooter(data) {
   el.footerTotal.textContent =
     data.totalSeconds > 0
-      ? `${formatExact(data.totalSeconds)} за ${data.year} год`
-      : 'данных пока нет';
+      ? `${formatExact(data.totalSeconds)} in ${data.year}`
+      : 'no data yet';
   if (el.footerVersion && data.version) el.footerVersion.textContent = `v${data.version}`;
 }
 
-/* --- загрузка --- */
+/* --- loading --- */
 
 async function load() {
   const response = await fetch('/api/summary');
-  if (!response.ok) throw new Error(`сервер ответил ${response.status}`);
+  if (!response.ok) throw new Error(`server responded ${response.status}`);
   summaryData = await response.json();
 
   const year = summaryData.year;
@@ -543,9 +537,9 @@ async function load() {
     link.href = `/api/export?year=${year}&format=csv`;
   }
 
-  baseTitle = `YearScope ${year}: ${formatHours(summaryData.totalSeconds)} ч`;
+  baseTitle = `YearScope ${year}: ${formatHours(summaryData.totalSeconds)} h`;
   document.title = baseTitle;
-  el.subtitle.textContent = `сколько времени ушло на активности в ${year} году`;
+  el.subtitle.textContent = `where the time went in ${year}`;
 
   renderTotal(summaryData);
   el.cards.replaceChildren(...summaryData.sources.map((source, index) => renderCard(source, index)));
@@ -584,7 +578,7 @@ el.tabs.addEventListener('click', (event) => {
 });
 
 el.sourceBack.addEventListener('click', () => {
-  // Возврат по истории бережёт контекст (фильтр журнала, скролл); прямой заход ведёт на сводку.
+  // Going back through history keeps context (journal filter, scroll); a direct visit goes to the summary.
   if (window.history.length > 1) window.history.back();
   else showView('summary');
 });
@@ -592,15 +586,15 @@ el.sourceBack.addEventListener('click', () => {
 async function doSync(button) {
   const label = button.textContent;
   button.disabled = true;
-  button.textContent = 'Обновляю…';
+  button.textContent = 'Refreshing…';
   try {
     await fetch('/api/sync', { method: 'POST' });
-    // Синхронизация асинхронная: ждём, пока сервер отметит её завершённой.
-    // Счётчик секунд в кнопке это честный признак жизни вместо чёрного ящика.
+    // Sync is asynchronous: wait until the server marks it finished.
+    // The seconds counter in the button is an honest sign of life instead of a black box.
     const started = Date.now();
     for (let attempt = 0; attempt < 40; attempt += 1) {
       await new Promise((resolve) => setTimeout(resolve, 1000));
-      button.textContent = `Обновляю… ${Math.round((Date.now() - started) / 1000)}с`;
+      button.textContent = `Refreshing… ${Math.round((Date.now() - started) / 1000)}s`;
       const health = await fetch('/api/health').then((response) => response.json());
       if (!health.syncing) break;
     }
@@ -608,7 +602,7 @@ async function doSync(button) {
     if (currentView === 'journal') await loadJournal();
     if (currentView === 'source' && currentSource) await openSource(currentSource);
   } catch (error) {
-    el.subtitle.textContent = `не удалось обновить: ${error.message}`;
+    el.subtitle.textContent = `could not refresh: ${error.message}`;
   } finally {
     button.disabled = false;
     button.textContent = label;
@@ -620,7 +614,7 @@ el.footerSync.addEventListener('click', () => doSync(el.footerSync));
 
 const pagehead = document.getElementById('pagehead');
 if (pagehead && 'IntersectionObserver' in window) {
-  // Кнопка видна, пока заголовок страницы вне вьюпорта, без обработчика на каждый кадр скролла.
+  // The button is visible while the page title is out of the viewport, without a handler on every scroll frame.
   new IntersectionObserver(([entry]) => {
     el.toTop.hidden = entry.isIntersecting;
   }).observe(pagehead);
@@ -633,5 +627,5 @@ if (pagehead && 'IntersectionObserver' in window) {
 el.toTop.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
 
 load().catch((error) => {
-  el.subtitle.textContent = `не удалось загрузить: ${error.message}`;
+  el.subtitle.textContent = `could not load: ${error.message}`;
 });

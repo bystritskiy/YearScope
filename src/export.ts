@@ -14,7 +14,7 @@ export type YearExport = {
   }>;
 };
 
-/** Полный снимок года: сводка, общий журнал и разрезы по источникам. */
+/** A full snapshot of the year: summary, the shared journal and per-source breakdowns. */
 export function buildExport(year = config.year): YearExport {
   const summary = buildSummary(year);
   const journal = getJournal(year);
@@ -45,7 +45,7 @@ function csvEscape(value: string): string {
   return value;
 }
 
-/** Плоский журнал для Excel/Numbers: одна строка это одно событие. */
+/** A flat journal for Excel/Numbers: one row is one event. */
 export function buildJournalCsv(year = config.year): string {
   const days = getJournal(year);
   const lines = ['day,source,title,subtitle,seconds,hours,estimated'];
@@ -67,6 +67,6 @@ export function buildJournalCsv(year = config.year): string {
     }
   }
 
-  // BOM нужен, чтобы Excel на Windows не ломал кириллицу.
+  // The BOM keeps Excel on Windows from mangling non-ASCII titles.
   return `\uFEFF${lines.join('\n')}\n`;
 }

@@ -7,16 +7,16 @@ import {
 } from './db.ts';
 
 /**
- * Демо-режим: правдоподобный вымышленный год вместо личной истории.
+ * Demo mode: a plausible fictional year instead of personal history.
  *
- * Нужен, чтобы показать интерфейс на скриншотах и дать пощупать проект тому,
- * у кого нет ни ключей, ни аккаунтов в пяти сервисах. Сеть не трогается вовсе.
+ * Exists to show the interface in screenshots and let someone without keys or
+ * accounts on five services try the project. The network is never touched.
  *
- * Генератор детерминированный: один и тот же год даёт одну и ту же картинку,
- * иначе каждый пересъём скриншотов менял бы все числа в README.
+ * The generator is deterministic: the same year yields the same picture,
+ * otherwise every screenshot retake would change all the numbers in the README.
  */
 
-/** mulberry32: короткий и воспроизводимый PRNG; Math.random() здесь не годится. */
+/** mulberry32: a short, reproducible PRNG; Math.random() will not do here. */
 function rng(seed: number): () => number {
   let state = seed >>> 0;
   return () => {
@@ -73,32 +73,32 @@ const FILMS: Array<[string, string, number]> = [
 ];
 
 const BOOKS: Array<[string, string]> = [
-  ['Пикник на обочине', 'Аркадий и Борис Стругацкие'],
-  ['Мастер и Маргарита', 'Михаил Булгаков'],
-  ['Дюна', 'Фрэнк Герберт'],
-  ['Задача трёх тел', 'Лю Цысинь'],
-  ['Убик', 'Филип Дик'],
-  ['Сто лет одиночества', 'Габриэль Гарсиа Маркес'],
-  ['Норвежский лес', 'Харуки Мураками'],
+  ['Roadside Picnic', 'Arkady and Boris Strugatsky'],
+  ['The Master and Margarita', 'Mikhail Bulgakov'],
+  ['Dune', 'Frank Herbert'],
+  ['The Three-Body Problem', 'Liu Cixin'],
+  ['Ubik', 'Philip K. Dick'],
+  ['One Hundred Years of Solitude', 'Gabriel García Márquez'],
+  ['Norwegian Wood', 'Haruki Murakami'],
 ];
 
 const WORKOUTS: Array<[string, string]> = [
-  ['Morning Ride', 'Велосипед'],
-  ['Evening Run', 'Бег'],
-  ['City Walk', 'Ходьба'],
-  ['Strength', 'Силовая'],
-  ['Yoga', 'Йога'],
-  ['Pool', 'Плавание'],
+  ['Morning Ride', 'Cycling'],
+  ['Evening Run', 'Running'],
+  ['City Walk', 'Walking'],
+  ['Strength', 'Strength'],
+  ['Yoga', 'Yoga'],
+  ['Pool', 'Swimming'],
 ];
 
-/** Книги «начались» в июне, чтобы демо показывало и честную отметку о пробеле. */
+/** Books "started" in June so the demo also shows the honest gap caveat. */
 const BOOKS_START = '-06-10';
 
 function daysOfYear(year: number): string[] {
   const days: string[] = [];
   const last = new Date(Date.UTC(year, 11, 31));
   const today = new Date();
-  // Текущий год обрывается сегодняшним днём: так демо выглядит как живая картина.
+  // The current year is cut off at today: that way the demo looks like a live picture.
   const end = today.getUTCFullYear() === year && today < last ? today : last;
   for (let d = new Date(Date.UTC(year, 0, 1)); d <= end; d.setUTCDate(d.getUTCDate() + 1)) {
     days.push(d.toISOString().slice(0, 10));
@@ -111,7 +111,7 @@ const isWeekend = (day: string): boolean => {
   return weekday === 0 || weekday === 6;
 };
 
-/** Суммирует секунды по ключу и отдаёт готовый рейтинг для highlights. */
+/** Sums seconds by key and returns a ready ranking for highlights. */
 function ranking(
   rows: Array<{ key: string; title: string; subtitle: string | null; seconds: number }>,
 ): Array<{ title: string; subtitle: string | null; seconds: number }> {
@@ -139,7 +139,7 @@ export function seedDemo(year: number): void {
   for (const day of days) {
     const weekend = isWeekend(day);
 
-    // Игры: почти каждый день понемногу, на выходных по нескольку тайтлов.
+    // Games: a little almost every day, several titles on weekends.
     if (random() < (weekend ? 0.85 : 0.55)) {
       const count = weekend ? between(1, 3) : 1;
       const chosen = new Set<number>();
@@ -158,11 +158,11 @@ export function seedDemo(year: number): void {
       }
     }
 
-    // Сериалы: смотрятся сериями подряд, поэтому пачкой и не каждый день.
+    // TV shows: watched several episodes in a row, so in batches and not every day.
     if (random() < 0.4) {
       const [show, list] = pick(SHOWS);
       const count = Math.min(between(1, weekend ? 4 : 2), list.length);
-      // Серии идут подряд от случайной точки, как при обычном запое сериалом.
+      // Episodes run consecutively from a random point, like a typical binge.
       const start = Math.floor(random() * list.length);
       for (let i = 0; i < count; i += 1) {
         const episode = list[(start + i) % list.length]!;
@@ -176,7 +176,7 @@ export function seedDemo(year: number): void {
       }
     }
 
-    // Кино: пара фильмов в неделю, чаще на выходных.
+    // Movies: a couple a week, more often on weekends.
     if (random() < (weekend ? 0.3 : 0.1)) {
       const [title, director, runtime] = pick(FILMS);
       films.push({
@@ -188,7 +188,7 @@ export function seedDemo(year: number): void {
       });
     }
 
-    // Книги: только со старта учёта, чтобы демо показывало и честную отметку о пробеле.
+    // Books: only from the tracking start, so the demo also shows the honest gap caveat.
     if (day.slice(4) >= BOOKS_START && random() < 0.45) {
       const [title, author] = pick(BOOKS);
       books.push({
@@ -200,7 +200,7 @@ export function seedDemo(year: number): void {
       });
     }
 
-    // Тренировки: примерно четыре раза в неделю, на выходных длиннее.
+    // Workouts: about four times a week, longer on weekends.
     if (random() < (weekend ? 0.75 : 0.45)) {
       const [title, type] = pick(WORKOUTS);
       workouts.push({
@@ -253,7 +253,7 @@ export function seedDemo(year: number): void {
   write(
     'intervals',
     workouts,
-    // У тренировок рейтинг по виду активности, а не по названию: так честнее.
+    // Workouts are ranked by activity type, not by name: that is more honest.
     ranking(
       workouts.map((row) => ({
         key: row.subtitle ?? row.title,
@@ -268,9 +268,9 @@ export function seedDemo(year: number): void {
     Math.round(rows.reduce((sum, row) => sum + row.seconds, 0) / 3600);
 
   /**
-   * coversFrom это не «первая запись», а дата, с которой источник ведёт учёт.
-   * У четырёх он ведётся с начала года, у книг с июня: демо должно показывать
-   * и эту оговорку, она в продукте на видном месте.
+   * coversFrom is not "the first record" but the date the source has tracked from.
+   * Four track from the start of the year, books from June: the demo must show
+   * this caveat too, it is prominent in the product.
    */
   const state = (
     source: 'gowithme' | 'myshows' | 'letterboxd' | 'koshelf' | 'intervals',
@@ -281,9 +281,9 @@ export function seedDemo(year: number): void {
   };
 
   const yearStart = `${year}-01-01`;
-  state('gowithme', yearStart, `демо: ${hours(games)} ч, игр в журнале: ${games.length}`);
-  state('myshows', yearStart, `демо: ${hours(episodes)} ч, серий: ${episodes.length}`);
-  state('letterboxd', yearStart, `демо: ${hours(films)} ч, фильмов: ${films.length}`);
-  state('koshelf', `${year}${BOOKS_START}`, `демо: ${hours(books)} ч, книг: ${books.length}`);
-  state('intervals', yearStart, `демо: ${hours(workouts)} ч, тренировок: ${workouts.length}`);
+  state('gowithme', yearStart, `demo: ${hours(games)} h, games in journal: ${games.length}`);
+  state('myshows', yearStart, `demo: ${hours(episodes)} h, episodes: ${episodes.length}`);
+  state('letterboxd', yearStart, `demo: ${hours(films)} h, movies: ${films.length}`);
+  state('koshelf', `${year}${BOOKS_START}`, `demo: ${hours(books)} h, books: ${books.length}`);
+  state('intervals', yearStart, `demo: ${hours(workouts)} h, workouts: ${workouts.length}`);
 }

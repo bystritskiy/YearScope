@@ -25,7 +25,7 @@ type PlayerResponse = {
   }>;
 };
 
-/** Раскладка кодов площадок в человеческие названия. */
+/** Maps platform codes to human-readable names. */
 const PLATFORM_LABELS: Record<string, string> = {
   nintendo: 'Nintendo',
   psn: 'PlayStation',
@@ -44,14 +44,14 @@ export const gowithme: Source = {
 
   async sync(year: number): Promise<SyncResult> {
     const { baseUrl, player } = config.sources.gowithme;
-    // byDayGames это opt-in агрегат day × title; без include профиль не раздувается.
+    // byDayGames is an opt-in day × title aggregate; without include the profile stays small.
     const url =
       `${baseUrl}/api/player?name=${encodeURIComponent(player)}` +
       `&period=year&include=byDayGames`;
     const data = await fetchJson<PlayerResponse>(url);
 
-    // period=year привязан к текущему году, поэтому фильтруем сами:
-    // так сводка за прошлый год не наберёт лишнего из свежих данных.
+    // period=year is tied to the current year, so we filter ourselves:
+    // that way last year's summary does not pick up extra from fresh data.
     const prefix = `${year}-`;
     const days = (data.byDay ?? []).filter((row) => row.day.startsWith(prefix));
     const dayGames = (data.byDayGames ?? []).filter((row) => row.day.startsWith(prefix));
@@ -62,7 +62,7 @@ export const gowithme: Source = {
       days.map((row) => ({ day: row.day, seconds: row.total_seconds, items: row.sessions })),
     );
 
-    // Одна строка журнала на игру в день, не сырые сессии и не «за день» целиком.
+    // One journal row per game per day, not raw sessions and not the whole day.
     const entries: EntryRow[] = dayGames.map((game) => ({
       externalId: `${game.day}|${game.title_id}`,
       day: game.day,
@@ -94,7 +94,7 @@ export const gowithme: Source = {
     return {
       coversFrom: trackedSince,
       granularity: 'day',
-      summary: `${days.length} дней, ${Math.round(seconds / 3600)} ч, игр в журнале: ${entries.length}`,
+      summary: `${days.length} days, ${Math.round(seconds / 3600)} h, games in journal: ${entries.length}`,
     };
   },
 };

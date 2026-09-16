@@ -1,12 +1,12 @@
 import { readZip } from './zip.ts';
 
 /**
- * Читает xlsx в строки. Достаточно для выгрузок вроде myshows: значения
- * берутся как текст, форматирование и формулы игнорируются.
+ * Reads an xlsx into rows. Enough for exports like myshows: values are taken
+ * as text, formatting and formulas are ignored.
  *
- * Важная тонкость: Excel не пишет пустые ячейки, поэтому позицию колонки
- * нельзя определять по порядку, только по атрибуту r ("C5"). Иначе строка
- * с пустой оценкой съедет на колонку влево.
+ * An important subtlety: Excel does not write empty cells, so a column's
+ * position cannot be derived from order, only from the r attribute ("C5").
+ * Otherwise a row with an empty rating would shift one column to the left.
  */
 
 const decodeEntities = (value: string): string =>
@@ -19,7 +19,7 @@ const decodeEntities = (value: string): string =>
     .replace(/&#(\d+);/g, (_, dec) => String.fromCodePoint(Number.parseInt(dec, 10)))
     .replace(/&amp;/g, '&');
 
-/** "AB" → 27 (нумерация с единицы). */
+/** "AB" → 27 (one-based). */
 function columnToIndex(reference: string): number {
   const letters = reference.match(/^[A-Z]+/)?.[0] ?? 'A';
   let index = 0;
@@ -32,7 +32,7 @@ function columnToIndex(reference: string): number {
 function parseSharedStrings(xml: string | undefined): string[] {
   if (!xml) return [];
   return [...xml.matchAll(/<si>([\s\S]*?)<\/si>/g)].map((match) => {
-    // Внутри <si> может быть несколько <t>, если строка разбита форматированием.
+    // A <si> can hold several <t> if the string is split by formatting.
     const parts = [...match[1].matchAll(/<t[^>]*>([\s\S]*?)<\/t>/g)].map((part) => part[1]);
     return decodeEntities(parts.join(''));
   });
@@ -73,19 +73,19 @@ function parseSheet(xml: string, shared: string[]): string[][] {
   return rows;
 }
 
-/** Разбирает книгу в карту «имя листа → строки». */
+/** Parses the workbook into a map of "sheet name → rows". */
 export function readXlsx(buffer: Buffer): Map<string, string[][]> {
   const files = readZip(buffer);
   const text = (path: string) => files.get(path)?.toString('utf8');
 
   const workbook = text('xl/workbook.xml');
-  if (!workbook) throw new Error('это не xlsx: внутри нет xl/workbook.xml');
+  if (!workbook) throw new Error('not an xlsx: no xl/workbook.xml inside');
 
   const shared = parseSharedStrings(text('xl/sharedStrings.xml'));
 
-  // Связь «лист → файл» идёт через r:id, а не через порядок листов в книге.
-  // Теги ловим и самозакрывающиеся, и парные: myshows выгружает через Go XLSX,
-  // а та пишет <sheet ...></sheet>, тогда как Excel пишет <sheet .../>.
+  // The "sheet → file" link goes through r:id, not the sheet order in the workbook.
+  // Both self-closing and paired tags are matched: myshows exports via Go XLSX,
+  // which writes <sheet ...></sheet>, whereas Excel writes <sheet .../>.
   const relationships = new Map<string, string>();
   for (const match of (text('xl/_rels/workbook.xml.rels') ?? '').matchAll(
     /<Relationship([^>]*?)\/?>/g,
